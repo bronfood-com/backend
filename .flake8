@@ -5,21 +5,3 @@ exclude =
     src/bronfood/settings.py,
     src/bronfood/asgi.py,
     src/bronfood/wsgi.py,
-
-[black]
-line-length = 120
-target-version =
-  py27
-  py33
-  py34
-  py35
-  py36
-  py37
-  py38
-pyi = True
-skip-string-normalization = True
-color = True
-exclude = /(\.src/bronfood)/
-force-exclude = lorem ipsum
-quiet = True
-verbose = True
