@@ -7,7 +7,8 @@ exclude = '''
       venv         # exclude a few common directories in the
     | src/bronfood
   )/
-  | foo.py           # also separately exclude a file named foo.py in
+  | foo.py
+  | manage.py           # also separately exclude a file named foo.py in
                      # the root of the project
 )
 '''
