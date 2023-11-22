@@ -4,7 +4,7 @@
 [![REST API](https://img.shields.io/badge/-REST%20API-464646?style=flat-square&logo=REST%20API)](https://restfulapi.net/)
 [![PostgreSQL](https://img.shields.io/badge/-SQLite-464646?style=flat-square&logo=PostgreSQL)](https://www.postgresql.org/)
 
-Friday-13 является сервисом для работы в кандидатами и резюме.
+Бронфуд.ком приложение позволяет найти заведение общепита на карте, посмотреть меню, сделать заказ еды на вынос, и благодаря отслеживанию времени прийти и забрать еду во время. Без ожидания приготовления в самом заведении.
 
 ## Над проектом работали:
 - [Александр Солодников](https://github.com/Solodnikov)
