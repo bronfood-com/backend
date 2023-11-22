@@ -19,4 +19,6 @@ jobs:
       - name: run flake8
         run: flake8
       - name: run black
+        depends-on: flake8
         run: black . --check
+          
