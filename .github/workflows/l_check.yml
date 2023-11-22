@@ -19,4 +19,4 @@ jobs:
       - name: run flake8
         run: flake8
       - name: run black
-        run: black --check .
+        run: black . --check
