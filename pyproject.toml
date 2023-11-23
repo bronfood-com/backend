@@ -3,14 +3,10 @@ line-length = 88
 include = '\.pyi?$'
 exclude = '''
 (
-  /(
-      venv
-  )/
   | manage.py
   | asgi.py
   | settings.py
   | wsgi.py
-  | src/bronfood/urls.py        # also separately exclude a file named foo.py in
-                     # the root of the project
+  | src/bronfood/urls.py
 )
 '''
