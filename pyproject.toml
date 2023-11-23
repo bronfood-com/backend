@@ -4,11 +4,13 @@ include = '\.pyi?$'
 exclude = '''
 (
   /(
-      venv         # exclude a few common directories in the
-    | src/bronfood
+      venv
   )/
-  | foo.py
-  | manage.py           # also separately exclude a file named foo.py in
+  | manage.py
+  | asgi.py
+  | settings.py
+  | wsgi.py
+  | src/bronfood/urls.py        # also separately exclude a file named foo.py in
                      # the root of the project
 )
 '''
