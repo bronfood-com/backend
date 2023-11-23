@@ -3,7 +3,9 @@ Django==4.2.7
 djangorestframework==3.14.0
 drf-yasg==1.21.7
 inflection==0.5.1
+gunicorn==21.2.0
 packaging==23.2
+psycopg2-binary==2.9.6
 python-dotenv==1.0.0
 pytz==2023.3.post1
 PyYAML==6.0.1
