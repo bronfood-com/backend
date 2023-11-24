@@ -19,7 +19,7 @@ while True:
             host=os.getenv('DB_HOST'),
             port=os.getenv('DB_PORT'),
             password=os.getenv('POSTGRES_PASSWORD'),
-            user=os.getenv('POSTGRES_USER')
+            user=os.getenv('POSTGRES_USER'),
         )
         logger.debug('Successful connection')
         break
