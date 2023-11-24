@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15.3-alpine3.18
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ../.env
+
+  web:
+    build: ../
+    restart: always
+    volumes:
+      - ./deploy_in_container.py:/app/infra/deploy_in_container.py
+    depends_on:
+      - db
+    command: python infra/deploy_in_container.py
+    env_file:
+      - ../.env
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
