@@ -26,6 +26,13 @@ git clone https://github.com/bronfood-com/backend
 docker-compose -f docker-compose.yml up -d
 ```
 
+### Запуск unit-testов:
+
+```
+cd src/
+python manage.py test
+```
+
 ### Запуск проекта локального сервера:
 
 ```
