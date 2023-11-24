@@ -3,7 +3,7 @@ line-length = 88
 include = '\.pyi?$'
 exclude = '''
 (
-    src/bronfood/urls.py
+    .src/bronfood/urls.py
   | .manage.py
   | .asgi.py
   | .settings.py
