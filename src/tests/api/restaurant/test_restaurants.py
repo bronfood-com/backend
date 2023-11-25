@@ -8,7 +8,7 @@ class UrlTests(TestCase):
         на адрес '/restaurants/'
         """
         guest_client = Client()
-        response = guest_client.get("/restaurants/")
+        response = guest_client.get("/api/restaurants/")
         self.assertEqual(response.status_code, 200)
 
     def test_get_menu(self):
@@ -17,5 +17,5 @@ class UrlTests(TestCase):
         на адрес '/menus/'
         """
         guest_client = Client()
-        response = guest_client.get("/menus/")
+        response = guest_client.get("/api/menus/")
         self.assertEqual(response.status_code, 200)
