@@ -29,6 +29,9 @@ class Restaurant(models.Model):
         default=False, verbose_name='Можно ли отменить заказ'
     )
     time_to_cancel = models.TimeField('Время для отмены заказа', null=True)
+    menu = models.ForeignKey(
+        'Menu', on_delete=models.SET_NULL, null=True, verbose_name='Меню'
+    )
 
     def __str__(self):
         return self.title
@@ -41,9 +44,6 @@ class Menu(models.Model):
     price = models.PositiveIntegerField('Цена', null=False)  # models.FloatField('Цена')
     description = models.TextField('Описание')
     pic = models.ImageField('Изображение блюда', upload_to='pics')
-    restaurant = models.ForeignKey(
-        Restaurant, on_delete=models.SET_NULL, null=True, verbose_name='Ресторан'
-    )
 
     def __str__(self):
         return self.title

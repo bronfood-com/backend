@@ -40,7 +40,7 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'bronfood.api.apps.ApiConfig',
-    'bronfood.core.restaurant',
+    'bronfood.core.restaurants',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
