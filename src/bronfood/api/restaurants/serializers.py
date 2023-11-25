@@ -2,7 +2,24 @@ from bronfood.core.restaurants.models import Restaurant, Menu
 from rest_framework import serializers
 
 
+class MenuSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Menu
+        fields = (
+            'id',
+            'is_active',
+            'is_archived',
+            'title',
+            'price',
+            'description',
+            'pic',
+        )
+
+
 class RestaurantSerializer(serializers.ModelSerializer):
+    menu = MenuSerializer(many=True, read_only=True)
+
     class Meta:
         model = Restaurant
         fields = (
@@ -17,21 +34,5 @@ class RestaurantSerializer(serializers.ModelSerializer):
             'tags',
             'is_canceled',
             'time_to_cancel',
-        )
-
-
-class MenuSerializer(serializers.ModelSerializer):
-    restaurant = RestaurantSerializer(many=False, read_only=True)
-
-    class Meta:
-        model = Menu
-        fields = (
-            'id',
-            'is_active',
-            'is_archived',
-            'title',
-            'price',
-            'description',
-            'pic',
-            'restaurant',
+            'menu',
         )
