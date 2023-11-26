@@ -2,7 +2,27 @@ from django.db import models
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField('Название', max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+
+class Dishes(models.Model):
+    name = models.CharField('Название блюда', max_length=255)
+    description = models.CharField('Описание', max_length=255, null=True)
+    price = models.PositiveIntegerField('Цена')
+    pic = models.ImageField('Изображение блюда', upload_to='pics')
+
+
+    def __str__(self):
+        return self.name
+    
+class CategoryDishes(models.Model):
+    name = models.CharField('Название категории', max_length=255)
+    dishes = models.ForeignKey(Dishes, on_delete=models.SET_NULL, null=True, verbose_name='Блюда')
+    
 
     def __str__(self):
         return self.name
@@ -38,12 +58,11 @@ class Restaurant(models.Model):
 
 
 class Menu(models.Model):
-    is_active = models.BooleanField(default=True)
-    is_archived = models.BooleanField(default=False)
-    title = models.CharField('Название блюда', max_length=255)
-    price = models.PositiveIntegerField('Цена', null=False)  # models.FloatField('Цена')
-    description = models.TextField('Описание')
-    pic = models.ImageField('Изображение блюда', upload_to='pics')
+    is_active = models.BooleanField('Активно ли', default=True)
+    is_archived = models.BooleanField('Архивировано ли', default=False)
+    rating = models.PositiveIntegerField('Рейтинг', max_length=5)
+    pic = models.ImageField('Изображение меню', upload_to='pics')
+    dishes = models.ManyToManyField(Dishes, verbose_name='Блюда')
 
     def __str__(self):
         return self.title
