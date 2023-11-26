@@ -8,21 +8,21 @@ class Tag(models.Model):
         return self.name
 
 
-
 class Dishes(models.Model):
     name = models.CharField('Название блюда', max_length=255)
     description = models.CharField('Описание', max_length=255, null=True)
     price = models.PositiveIntegerField('Цена')
     pic = models.ImageField('Изображение блюда', upload_to='pics')
 
-
     def __str__(self):
         return self.name
-    
+
+
 class CategoryDishes(models.Model):
     name = models.CharField('Название категории', max_length=255)
-    dishes = models.ForeignKey(Dishes, on_delete=models.SET_NULL, null=True, verbose_name='Блюда')
-    
+    dishes = models.ForeignKey(
+        Dishes, on_delete=models.SET_NULL, null=True, verbose_name='Блюда'
+    )
 
     def __str__(self):
         return self.name

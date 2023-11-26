@@ -7,7 +7,7 @@ from .restaurants.views import (
     TagViewSet,
     DishesViewSet,
     CategoryDishesViewSet,
-    )
+)
 
 router = routers.DefaultRouter()
 router.register('restaurants', RestaurantViewSet)
