@@ -1,0 +1,12 @@
+[tool.black]
+line-length = 88
+include = '\.pyi?$'
+exclude = '''
+(
+    .src/bronfood/urls.py
+  | .manage.py
+  | .asgi.py
+  | .settings.py
+  | .wsgi.py
+)
+'''
