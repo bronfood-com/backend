@@ -40,6 +40,7 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'bronfood.api.apps.ApiConfig',
+    'bronfood.core.client.apps.ClientConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -49,6 +50,9 @@ INSTALLED_APPS = [
     'drf_yasg',
     'rest_framework',
 ]
+
+# подключаем пользовательскую модель User
+AUTH_USER_MODEL = 'client.CustomUser'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
