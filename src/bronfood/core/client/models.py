@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.utils import timezone
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, AbstractUser
+from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager,
+                                        PermissionsMixin)
 
 
 class CustomUserManager(BaseUserManager):
