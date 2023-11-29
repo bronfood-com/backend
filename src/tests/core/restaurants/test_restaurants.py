@@ -6,19 +6,9 @@ class TaskModelTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Создаём тестовую запись в БД
-        # и сохраняем созданную запись в качестве переменной класса
-        cls.tag = Tag.objects.create(
-            name='test'
-        )
+        cls.tag = Tag.objects.create(name='test')
         cls.dishes = Dishes.objects.create(
-            name='test',
-            description='test',
-            price=100,
-            pic='test'
-        )
-        menu = Menu.objects.create(
-            is_active=True
+            name='test', description='test', price=100, pic='test'
         )
         menu = Menu.objects.create(is_active=True)
         cls.restaurant = Restaurant.objects.create(
@@ -31,7 +21,7 @@ class TaskModelTest(TestCase):
             type_of_restaurant='test',
             tags=cls.tag,
             is_canceled=False,
-            rating=100
+            rating=100,
         )
         cls.restaurant.menu.set([menu])
 

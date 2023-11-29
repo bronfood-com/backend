@@ -6,4 +6,3 @@ admin.site.register(Restaurant)
 admin.site.register(Menu)
 admin.site.register(Dishes)
 admin.site.register(Tag)
-

@@ -21,7 +21,7 @@ class Dishes(models.Model):
 class Menu(models.Model):
     is_active = models.BooleanField('Активно ли', default=True)
     pic = models.ImageField('Изображение меню', upload_to='pics', null=True, blank=True)
-    dishes = models.ManyToManyField(Dishes,  verbose_name='Блюда')
+    dishes = models.ManyToManyField(Dishes, verbose_name='Блюда')
 
 
 class Restaurant(models.Model):
@@ -45,9 +45,7 @@ class Restaurant(models.Model):
         default=False, verbose_name='Можно ли отменить заказ'
     )
     time_to_cancel = models.TimeField('Время для отмены заказа', null=True)
-    menu = models.ManyToManyField(
-        Menu, verbose_name='Меню'
-    )
+    menu = models.ManyToManyField(Menu, verbose_name='Меню')
     rating = models.PositiveIntegerField('Рейтинг')
 
     def __str__(self):
