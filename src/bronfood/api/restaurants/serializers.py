@@ -3,7 +3,6 @@ from bronfood.core.restaurants.models import (
     Menu,
     Dishes,
     Tag,
-    CategoryDishes,
 )
 from rest_framework import serializers
 
@@ -29,18 +28,6 @@ class DishesSerializer(serializers.ModelSerializer):
         )
 
 
-class CategoryDishesSerializer(serializers.ModelSerializer):
-    dishes = DishesSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = CategoryDishes
-        fields = (
-            'id',
-            'name',
-            'dishes',
-        )
-
-
 class MenuSerializer(serializers.ModelSerializer):
     dishes = DishesSerializer(many=True, read_only=True)
 
@@ -49,16 +36,23 @@ class MenuSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'is_active',
-            'is_archived',
-            'rating',
             'pic',
             'dishes',
         )
 
+    @staticmethod
+    def get_menu_pic(obj):
+        # Получаем последнее блюдо в меню
+        last_dish = obj.dishes.last()
+
+        # Если есть блюдо, возвращаем его фото
+        if last_dish:
+            return last_dish.pic
+
 
 class RestaurantSerializer(serializers.ModelSerializer):
     menu = MenuSerializer(many=True, read_only=True)
-    tag = TagSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
 
     class Meta:
         model = Restaurant
@@ -75,5 +69,6 @@ class RestaurantSerializer(serializers.ModelSerializer):
             'is_canceled',
             'time_to_cancel',
             'menu',
-            'tag',
+            'tags',
+            'rating',
         )

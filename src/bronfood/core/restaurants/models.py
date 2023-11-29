@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Tag(models.Model):
-    name = models.CharField('Название', max_length=255)
+    name = models.CharField('Название', max_length=255, unique=True)
 
     def __str__(self):
         return self.name
@@ -18,14 +18,10 @@ class Dishes(models.Model):
         return self.name
 
 
-class CategoryDishes(models.Model):
-    name = models.CharField('Название категории', max_length=255)
-    dishes = models.ForeignKey(
-        Dishes, on_delete=models.SET_NULL, null=True, verbose_name='Блюда'
-    )
-
-    def __str__(self):
-        return self.name
+class Menu(models.Model):
+    is_active = models.BooleanField('Активно ли', default=True)
+    pic = models.ImageField('Изображение меню', upload_to='pics', null=True, blank=True)
+    dishes = models.ManyToManyField(Dishes,  verbose_name='Блюда')
 
 
 class Restaurant(models.Model):
@@ -49,20 +45,10 @@ class Restaurant(models.Model):
         default=False, verbose_name='Можно ли отменить заказ'
     )
     time_to_cancel = models.TimeField('Время для отмены заказа', null=True)
-    menu = models.ForeignKey(
-        'Menu', on_delete=models.SET_NULL, null=True, verbose_name='Меню'
+    menu = models.ManyToManyField(
+        Menu, verbose_name='Меню'
     )
-
-    def __str__(self):
-        return self.title
-
-
-class Menu(models.Model):
-    is_active = models.BooleanField('Активно ли', default=True)
-    is_archived = models.BooleanField('Архивировано ли', default=False)
-    rating = models.PositiveIntegerField('Рейтинг', max_length=5)
-    pic = models.ImageField('Изображение меню', upload_to='pics')
-    dishes = models.ManyToManyField(Dishes, verbose_name='Блюда')
+    rating = models.PositiveIntegerField('Рейтинг')
 
     def __str__(self):
         return self.title
