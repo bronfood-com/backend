@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from bronfood.core.phone.models import IssueStatus, PhoneSmsOtpVerification
+from bronfood.core.phone.models import (IssueReason, PhoneSmsOtpVerification,
+                                        SmsMessage, SmsStatus)
 
 User = get_user_model()
 
@@ -11,14 +12,18 @@ class PhoneSmsOtpVerificationTest(TestCase):
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth')
-        cls.status = IssueStatus
+        cls.phone_number = '76665554433'
 
     def test_verbose_name(self):
-        """Проверка verbose name модели PhoneSmsOtpVerification"""
+        """Verifying the verbose name of the PhoneSmsOtpVerification model."""
         field_verbose = {
-            'password': 'Одноразовый пароль',
-            'issue_status': 'Статус выдачи',
-            'created_at': 'Создано в',
+            'message': 'Sms message',
+            'code': 'One-time password',
+            'phone_number': 'Phone number',
+            'sms_status': 'Sms status',
+            'issue_reason': 'Code issuance status',
+            'created_at': 'Created at',
+            'expired_at': 'Expired at'
         }
         for field, expected in field_verbose.items():
             with self.subTest(field=field):
@@ -27,32 +32,23 @@ class PhoneSmsOtpVerificationTest(TestCase):
                     .verbose_name, expected
                 )
 
-    def test_generate_otp(self):
-        """Проверка метода generate_otp модели PhoneSmsOtpVerification."""
-        otp_code = PhoneSmsOtpVerification.generate_otp(
-            PhoneSmsOtpVerificationTest.user,
-            PhoneSmsOtpVerificationTest.status.REGISTRATION
+    def test_create_object(self):
+        field_attrs = {
+            'message': SmsMessage.REGISTRATION,
+            'user': PhoneSmsOtpVerificationTest.user,
+            'phone_number': PhoneSmsOtpVerificationTest.phone_number,
+            'sms_status': SmsStatus.PENDING,
+            'issue_reason': IssueReason.REGISTRATION
+        }
+        otp_registration = PhoneSmsOtpVerification.objects.create(
+            message=SmsMessage.REGISTRATION,
+            user=PhoneSmsOtpVerificationTest.user,
+            phone_number=PhoneSmsOtpVerificationTest.phone_number,
+            sms_status=SmsStatus.PENDING,
+            issue_reason=IssueReason.REGISTRATION,
         )
-        with self.assertRaises(
-            TypeError,
-            msg='Ожидается TypeError, при несоответствующем атрибуте user'
-        ):
-            PhoneSmsOtpVerification.generate_otp(
-                user=None,
-                issue_status=PhoneSmsOtpVerificationTest.status.REGISTRATION
-            )
-        with self.assertRaises(
-            ValueError,
-            msg=('Ожидается ValueError, '
-                 'при несоответствующем атрибуте issue_status')
-        ):
-            PhoneSmsOtpVerification.generate_otp(
-                user=PhoneSmsOtpVerificationTest.user,
-                issue_status=None
-            )
-        self.assertEqual(len(otp_code), 4, 'Длина OTP должна быть равна 4.')
-        self.assertEqual(
-            otp_code,
-            str(PhoneSmsOtpVerificationTest.user.otp.last()),
-            'Сгенерированный OTP не соответсвует пользователю!'
-        )
+        for field, expected in field_attrs.items():
+            with self.subTest(field=field):
+                self.assertEqual(
+                    getattr(otp_registration, field), expected
+                )
