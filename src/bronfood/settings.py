@@ -39,6 +39,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'bronfood.core.custom_user.apps.CustomUserConfig',
     'bronfood.api.apps.ApiConfig',
     'django.contrib.admin',
     'django.contrib.auth',
