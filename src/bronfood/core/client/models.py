@@ -33,5 +33,4 @@ class Client(UserAccount):
 
     def save(self, *args, **kwargs):
         self.type = UserAccount.Types.CLIENT
-        self.is_client = True
         return super().save(*args, **kwargs)
