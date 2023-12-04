@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class CustomUserConfig(AppConfig):
+class ClientConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'bronfood.core.custom_user'
+    name = 'bronfood.core.client'
