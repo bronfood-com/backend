@@ -4,3 +4,5 @@ exclude =
     src/bronfood/settings.py,
     src/bronfood/asgi.py,
     src/bronfood/wsgi.py,
+    src/bronfood/core/client/migrations/*,
+    src/bronfood/core/useraccount/migrations/*,
