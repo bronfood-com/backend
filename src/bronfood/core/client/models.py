@@ -3,16 +3,15 @@ from bronfood.core.useraccount.models import UserAccount
 
 
 class ClientManager(models.Manager):
-    def create_user(self, email, username, password=None):
-        if not email or len(email) <= 0:
-            raise ValueError("Email field is required !")
+    def create_user(self, phone, username, password=None):
+        if not phone or len(phone) <= 0:
+            raise ValueError("Phone field is required !")
         if not username or len(username) <= 0:
             raise ValueError("Username field is required !")
         if not password:
             raise ValueError("Password is must !")
-        email = email.lower()
         user = self.model(
-            email=email,
+            phone=phone,
             username=username
         )
         user.set_password(password)

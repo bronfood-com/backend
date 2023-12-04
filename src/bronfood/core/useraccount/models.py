@@ -4,25 +4,25 @@ from .validators import CustomUnicodeUsernameValidator
 
 
 class UserAccountManager(BaseUserManager):
-    def create_user(self, email, username, password=None):
-        if not email or len(email) <= 0:
-            raise ValueError("Email field is required !")
+    def create_user(self, phone, username, password=None):
+        if not phone or len(phone) <= 0:
+            raise ValueError("Phone field is required !")
         if not username or len(username) <= 0:
             raise ValueError("Username field is required !")
         if not password:
             raise ValueError("Password is must !")
 
         user = self.model(
-            email=self.normalize_email(email),
+            phone=phone,
             username=username
         )
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, username, password):
+    def create_superuser(self, phone, username, password):
         user = self.create_user(
-            email=self.normalize_email(email),
+            phone=phone,
             username=username,
             password=password
         )
@@ -45,20 +45,20 @@ class UserAccount(AbstractBaseUser):
                             default=Types.CLIENT)
     username = models.CharField(max_length=200,
                                 validators=[CustomUnicodeUsernameValidator])
-    email = models.EmailField(max_length=200, unique=True)
+    phone = models.CharField(max_length=18, unique=True)
     is_active = models.BooleanField(default=True)
     is_valid = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
 
-    USERNAME_FIELD = "email"
+    USERNAME_FIELD = "phone"
     REQUIRED_FIELDS = ["username"]
 
     objects = UserAccountManager()
 
     def __str__(self):
-        return str(self.email)
+        return str(self.phone)
 
     def has_perm(self, perm, obj=None):
         return self.is_admin
