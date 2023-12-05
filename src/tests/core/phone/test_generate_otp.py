@@ -3,6 +3,7 @@ from django.test import TestCase
 
 from bronfood.core.phone.models import (IssueReason, PhoneSmsOtpVerification,
                                         SmsMessage, SmsStatus)
+from bronfood.core.phone.utils import generate_otp
 
 User = get_user_model()
 
@@ -25,6 +26,10 @@ class GenerateOTPTest(TestCase):
         """
         Verifying the generate_otp method of the PhoneSmsOtpVerification model.
         """
+        GenerateOTPTest.otp.code = generate_otp(
+            SmsStatus.PENDING, GenerateOTPTest.otp.phone_number
+        )
+        GenerateOTPTest.otp.save()
         self.assertEqual(
             len(GenerateOTPTest.otp.code), 4, 'Длина OTP должна быть равна 4.'
         )

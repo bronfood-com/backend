@@ -1,25 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
-from django.utils.crypto import get_random_string
+
+from bronfood.core.phone.constants import SMS_OTP_DURATION_MINUTES
+
 
 User = get_user_model()
 
 
-def generate_otp(sms_status, phone_number):
-    while True:
-        code = get_random_string(length=4, allowed_chars='0123456789')
-        if PhoneSmsOtpVerification.objects.filter(
-            sms_status=sms_status,
-            code=code,
-            phone_number=phone_number,
-        ).exists():
-            continue
-        return code
-
-
-def two_minutes_later():
-    return timezone.now() + timezone.timedelta(minutes=2)
+def in_one_hour():
+    return timezone.now() + timezone.timedelta(
+        minutes=SMS_OTP_DURATION_MINUTES
+    )
 
 
 class IssueReason(models.IntegerChoices):
@@ -70,7 +62,7 @@ class PhoneSmsOtpVerification(models.Model):
     )
     expired_at = models.DateTimeField(
         verbose_name='Expired at',
-        default=two_minutes_later
+        default=in_one_hour
     )
 
     class Meta:
@@ -78,7 +70,3 @@ class PhoneSmsOtpVerification(models.Model):
 
     def __str__(self):
         return self.message + self.code
-
-    def save(self, *args, **kwargs) -> None:
-        self.code = generate_otp(self.sms_status, self.phone_number)
-        return super().save(*args, **kwargs)
