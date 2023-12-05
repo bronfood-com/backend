@@ -63,7 +63,7 @@ class UserAccount(AbstractBaseUser):
         return str(self.phone)
 
     def has_perm(self, perm, obj=None):
-        return self.is_admin
+        return self.role == UserAccount.Role.ADMIN
 
     def has_module_perms(self, app_label):
         return True
