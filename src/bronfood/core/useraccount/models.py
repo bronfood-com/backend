@@ -27,7 +27,7 @@ class UserAccountManager(BaseUserManager):
             password=password
         )
         user.role = UserAccount.Role.ADMIN
-        user.active_status = UserAccount.ActiveStatus.CONFIRMED
+        user.status = UserAccount.Status.CONFIRMED
         user.save(using=self._db)
         return user
 
@@ -38,12 +38,11 @@ class UserAccount(AbstractBaseUser):
     """
     class Role(models.TextChoices):
         ADMIN = "ADMIN", "admin"
-        STAFF = "STAFF", "staff"
         CLIENT = "CLIENT", "client"
         OWNER = "OWNER", "owner"
         RESTAURANT_ADMIN = "RESTAURANT_ADMIN", "restaurant_admin"
 
-    class ActiveStatus(models.IntegerChoices):
+    class Status(models.IntegerChoices):
         UNCONFIRMED = 0, 'Unconfirmed'
         CONFIRMED = 1, 'Confirmed'
         BLOCKED = 2, 'Blocked'
@@ -53,8 +52,8 @@ class UserAccount(AbstractBaseUser):
     username = models.CharField(max_length=200,
                                 validators=[CustomUnicodeUsernameValidator])
     phone = models.CharField(max_length=18, unique=True)
-    active_status = models.SmallIntegerField(choices=ActiveStatus.choices,
-                                             default=ActiveStatus.UNCONFIRMED)
+    status = models.SmallIntegerField(choices=Status.choices,
+                                      default=Status.UNCONFIRMED)
     USERNAME_FIELD = "phone"
     REQUIRED_FIELDS = ["username"]
 
