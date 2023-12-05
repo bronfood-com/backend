@@ -26,9 +26,7 @@ class UserAccountManager(BaseUserManager):
             username=username,
             password=password
         )
-        user.is_admin = True
-        user.is_staff = True
-        user.is_superuser = True
+        user.role = UserAccount.Role.ADMIN
         user.save(using=self._db)
         return user
 
@@ -37,21 +35,25 @@ class UserAccount(AbstractBaseUser):
     """
     Общая модель для пользовательского аккаунта.
     """
-    class Types(models.TextChoices):
+    class Role(models.TextChoices):
+        ADMIN = "ADMIN", "admin"
+        STAFF = "STAFF", "staff"
         CLIENT = "CLIENT", "client"
         OWNER = "OWNER", "owner"
+        RESTAURANT_ADMIN = "RESTAURANT_ADMIN", "restaurant_admin"
 
-    type = models.CharField(max_length=8, choices=Types.choices,
-                            default=Types.CLIENT)
+    class ActiveStatus(models.IntegerChoices):
+        UNCONFIRMED = 1, 'Unconfirmed'
+        CONFIRMED = 2, 'Confirmed'
+        BLOCKED = 3, 'Blocked'
+
+    role = models.CharField(max_length=8, choices=Role.choices,
+                            default=Role.CLIENT)
     username = models.CharField(max_length=200,
                                 validators=[CustomUnicodeUsernameValidator])
     phone = models.CharField(max_length=18, unique=True)
-    is_active = models.BooleanField(default=True)
-    is_valid = models.BooleanField(default=False)
-    is_admin = models.BooleanField(default=False)
-    is_staff = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(default=False)
-
+    active_status = models.SmallIntegerField(choices=ActiveStatus.choices,
+                                             default=ActiveStatus.UNCONFIRMED)
     USERNAME_FIELD = "phone"
     REQUIRED_FIELDS = ["username"]
 
@@ -67,6 +69,6 @@ class UserAccount(AbstractBaseUser):
         return True
 
     def save(self, *args, **kwargs):
-        if not self.type or self.type is None:
-            self.type = UserAccount.Types.CLIENT
+        if not self.role or self.role is None:
+            self.role = UserAccount.Role.CLIENT
         return super().save(*args, **kwargs)
