@@ -5,13 +5,6 @@ from .validators import CustomUnicodeUsernameValidator
 
 class UserAccountManager(BaseUserManager):
     def create_user(self, phone, username, password=None):
-        if not phone or len(phone) <= 0:
-            raise ValueError("Phone field is required !")
-        if not username or len(username) <= 0:
-            raise ValueError("Username field is required !")
-        if not password:
-            raise ValueError("Password is must !")
-
         user = self.model(
             phone=phone,
             username=username
