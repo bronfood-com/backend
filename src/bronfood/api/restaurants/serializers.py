@@ -42,10 +42,8 @@ class MenuSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_menu_pic(obj):
-        # Получаем последнее блюдо в меню
         last_dish = obj.dishes.last()
 
-        # Если есть блюдо, возвращаем его фото
         if last_dish:
             return last_dish.pic
 
