@@ -6,4 +6,5 @@ exclude =
     src/bronfood/wsgi.py,
     src/bronfood/core/client/migrations/*,
     src/bronfood/core/useraccount/migrations/*,
+    src/bronfood/core/phone/migrations/*,
 
