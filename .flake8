@@ -1,7 +1,10 @@
 [flake8]
 ignore = D203, D100, D101, D104, D105, D106, D400, D205, E501, D102, F401
-exclude = 
+exclude =
     src/bronfood/settings.py,
     src/bronfood/asgi.py,
     src/bronfood/wsgi.py,
-    migrations,
+    src/bronfood/core/client/migrations/*,
+    src/bronfood/core/useraccount/migrations/*,
+    src/bronfood/core/phone/migrations/*,
+
