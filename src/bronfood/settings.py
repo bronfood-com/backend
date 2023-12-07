@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'bronfood.core.client.apps.ClientConfig',
     'bronfood.core.useraccount.apps.UseraccountConfig',
     'bronfood.api.apps.ApiConfig',
+    'bronfood.core.phone.apps.PhoneConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -138,4 +139,11 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
 AUTH_USER_MODEL = 'useraccount.UserAccount'
+
+
+SMS_SETTINGS = {
+    'BACKEND': 'bronfood.core.phone.sms.backends.dummy.SmsBackend' if ENV_NAME == 'local'
+    else os.getenv('BACKEND')
+}
