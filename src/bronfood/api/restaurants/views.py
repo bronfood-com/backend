@@ -1,6 +1,6 @@
 from bronfood.core.restaurants.models import (
     Tag,
-    Dishes,
+    Dish,
     Restaurant,
     Menu,
 )
@@ -8,7 +8,7 @@ from .serializers import (
     RestaurantSerializer,
     MenuSerializer,
     TagSerializer,
-    DishesSerializer,
+    DishSerializer,
 )
 from rest_framework import viewsets
 
@@ -28,6 +28,6 @@ class TagViewSet(viewsets.ModelViewSet):
     serializer_class = TagSerializer
 
 
-class DishesViewSet(viewsets.ModelViewSet):
-    queryset = Dishes.objects.all()
-    serializer_class = DishesSerializer
+class DishViewSet(viewsets.ModelViewSet):
+    queryset = Dish.objects.all()
+    serializer_class = DishSerializer

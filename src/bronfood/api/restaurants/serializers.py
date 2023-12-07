@@ -1,7 +1,7 @@
 from bronfood.core.restaurants.models import (
     Restaurant,
     Menu,
-    Dishes,
+    Dish,
     Tag,
 )
 from rest_framework import serializers
@@ -16,9 +16,9 @@ class TagSerializer(serializers.ModelSerializer):
         )
 
 
-class DishesSerializer(serializers.ModelSerializer):
+class DishSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Dishes
+        model = Dish
         fields = (
             'id',
             'name',
@@ -29,7 +29,7 @@ class DishesSerializer(serializers.ModelSerializer):
 
 
 class MenuSerializer(serializers.ModelSerializer):
-    dishes = DishesSerializer(many=True, read_only=True)
+    dishes = DishSerializer(many=True, read_only=True)
 
     class Meta:
         model = Menu
