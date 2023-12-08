@@ -39,7 +39,10 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'bronfood.core.client.apps.ClientConfig',
+    'bronfood.core.useraccount.apps.UseraccountConfig',
     'bronfood.api.apps.ApiConfig',
+    'bronfood.core.phone.apps.PhoneConfig',
     'bronfood.core.restaurant_owner.apps.ApiConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -96,7 +99,6 @@ DATABASES = {
     }
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -137,3 +139,12 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+AUTH_USER_MODEL = 'useraccount.UserAccount'
+
+
+SMS_SETTINGS = {
+    'BACKEND': 'bronfood.core.phone.sms.backends.dummy.SmsBackend' if ENV_NAME == 'local'
+    else os.getenv('BACKEND')
+}
