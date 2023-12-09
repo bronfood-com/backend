@@ -6,7 +6,7 @@ class ClientManager(UserAccountManager):
 
     def get_queryset(self, *args, **kwargs):
         queryset = super().get_queryset(*args, **kwargs)
-        queryset = queryset.filter(type=UserAccount.Role.CLIENT)
+        queryset = queryset.filter(role=UserAccount.Role.CLIENT)
         return queryset
 
 
@@ -17,5 +17,5 @@ class Client(UserAccount):
     objects = ClientManager()
 
     def save(self, *args, **kwargs):
-        self.type = UserAccount.Role.CLIENT
+        self.role = UserAccount.Role.CLIENT
         return super().save(*args, **kwargs)
