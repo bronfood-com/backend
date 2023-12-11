@@ -1,49 +1,23 @@
-from django.db import models
-from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.contrib.auth.models import (AbstractUser)
-from django.utils.translation import gettext_lazy as _
+from bronfood.core.useraccount.models import UserAccount, UserAccountManager
 
 
-class RestaurantOwner(AbstractUser):
+class RestaurantOwnerManager(UserAccountManager):
+
+    def get_queryset(self, *args, **kwargs):
+        queryset = super().get_queryset(*args, **kwargs)
+        queryset = queryset.filter(type=UserAccount.Role.OWNER)
+        return queryset
+
+
+class RestaurantOwner(UserAccount):
     """
-    Модель клиента RestaurantOwner
-    обязательные поля:
-        "имя фамилия",
-        "телефон",
-        "пароль"
+    Модель для владельца ресторана 'RestaurantOwner'
     """
-    username = models.CharField(
-        "username",
-        max_length=150,
-        validators=[UnicodeUsernameValidator(), ],
-        error_messages={
-            'unique': _("A user with that username already exists."),
-        },
-    )
-    email = models.EmailField(
-        "email",
-        max_length=255,
-        blank=True,
-        null=True,
-        unique=True,
-    )
-    phone = models.CharField(
-        "phone",
-        max_length=15,
-        unique=True,
-    )
-    user = models.OneToOneField(
-        'CustomUser',
-        on_delete=models.CASCADE,
-        related_name='restaurant_owner'
-    )
-    USERNAME_FIELD = 'phone'
-    REQUIRED_FIELDS = ['username', 'email', 'phone']
-
     class Meta:
-        verbose_name = 'Владелец'
-        verbose_name_plural = 'Владельцы'
-        ordering = ('id',)
+        proxy = True
 
-    def __str__(self):
-        return self.username
+    objects = RestaurantOwnerManager()
+
+    def save(self, *args, **kwargs):
+        self.type = UserAccount.Role.OWNER
+        return super().save(*args, **kwargs)
