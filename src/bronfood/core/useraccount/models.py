@@ -65,3 +65,11 @@ class UserAccount(AbstractBaseUser):
         if not self.role or self.role is None:
             self.role = UserAccount.Role.CLIENT
         return super().save(*args, **kwargs)
+
+    @property
+    def is_staff(self):
+        return self.role == UserAccount.Role.ADMIN
+
+    @property
+    def is_superuser(self):
+        return self.role == UserAccount.Role.ADMIN
