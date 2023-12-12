@@ -1,4 +1,4 @@
-from .models import Client
+from bronfood.core.client.models import Client
 from .serializers import (ClientSerializer,
                           ClientLoginSerializer,
                           ClientUpdateSerializer,
