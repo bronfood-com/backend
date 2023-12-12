@@ -3,10 +3,29 @@ from .models import Client
 from django.contrib.auth import authenticate
 
 
-# class OwnerSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Owner
-#         fields = '__all__'
+class ClientPasswordResetSerializer(serializers.Serializer):
+    """
+    Сериализатор для восстановления пароля клиента.
+    Осуществляется на основе телефона и нового пароля.
+    """
+    phone = serializers.CharField(max_length=18)
+    new_password = serializers.CharField(write_only=True)
+
+
+class ClientPasswordRecoverySerializer(serializers.ModelSerializer):
+    """
+    Сериалайзер модели клиента.
+    Обеспечивает кодирование пароля перед сохранением в БД.
+    """
+    class Meta:
+        model = Client
+        fields = ['phone']
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        if password:
+            instance.set_password(password)
+        return super().update(instance, validated_data)
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -15,7 +34,7 @@ class ClientSerializer(serializers.ModelSerializer):
     Обеспечивает кодирование пароля перед сохранением в БД.
     """
     password = serializers.CharField(
-        # write_only=True
+        write_only=True
     )
 
     class Meta:
@@ -26,21 +45,23 @@ class ClientSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password', None)
         user = super().create(validated_data)
         if password:
+            # Обеспечивает кодирование пароля перед сохранением в БД.
             user.set_password(password)
             user.save(update_fields=['password'])
         return user
 
 
-class UpdateClientSerializer(serializers.ModelSerializer):
+class ClientUpdateSerializer(serializers.ModelSerializer):
     """
     Сериализатор для обновления объекта клиента.
     """
     password = serializers.CharField(required=False)
-    email = serializers.EmailField(required=False)
+    phone = serializers.IntegerField(required=False)
+    username = serializers.CharField(required=False)
 
     class Meta:
         model = Client
-        fields = ['password', 'email']
+        fields = ['password', 'phone', 'username']
 
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)
@@ -65,8 +86,11 @@ class ClientLoginSerializer(serializers.Serializer):
             if user:
                 data['user'] = user
             else:
-                raise serializers.ValidationError('Unable to log in with provided credentials.')
+                raise serializers.ValidationError(
+                    'Unable to log in with provided credentials.'
+                )
         else:
-            raise serializers.ValidationError('Both phone and password are required fields.')
-
+            raise serializers.ValidationError(
+                'Both phone and password are required fields.'
+            )
         return data

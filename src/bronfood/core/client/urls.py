@@ -1,18 +1,22 @@
 # Создать эдпоинты для клиента в api/client (views, serializers, urls)
 # интегрировать их в основное приложение проекта (пока пустые)
-from rest_framework import urls
 from django.urls import path, include
-from .views import ClientAPIView, ClientLoginView, ClientLogoutView
+from .views import (ClientRegistrationView,
+                    ClientInfoView,
+                    ClientLoginView,
+                    ClientLogoutView,
+                    ClientPasswordResetView)
+
 
 app_name = 'client'
 
 urlpatterns = [
-    path('registration/', ClientAPIView.as_view(), name='index'),
-    path('', include('rest_framework.urls')),
+    path('registration/', ClientRegistrationView.as_view(), name='index'),
     path('my_login/', ClientLoginView.as_view(), name='my_login'),
-    path('my_logout/', ClientLogoutView.as_view(), name='my_logout')
-    # path('login/', views.group_posts, name='group_posts'),
-    # path('logout/',views.group_list, name='group_list'),
-    # path('get_detail/',views.group_list, name='group_list'),
-    # path('update/',views.group_list, name='group_list'),
-    ]
+    path('my_logout/', ClientLogoutView.as_view(), name='my_logout'),
+    path('info/', ClientInfoView.as_view(), name='info'),
+    path('password_recovery/',
+         ClientPasswordResetView.as_view(),
+         name='password_recovery'),
+    path('', include('rest_framework.urls')),
+]

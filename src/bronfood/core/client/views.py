@@ -1,31 +1,24 @@
-from rest_framework.generics import CreateAPIView
 from .models import Client
-from .serializers import Client, ClientSerializer, ClientLoginSerializer
-from rest_framework.permissions import AllowAny
+from .serializers import (ClientSerializer,
+                          ClientLoginSerializer,
+                          ClientUpdateSerializer,
+                          ClientPasswordResetSerializer)
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate, login, logout
+from rest_framework.decorators import (permission_classes,
+                                       authentication_classes)
+from rest_framework.authentication import SessionAuthentication
 
 
-# class CreateClient(CreateAPIView):
-#     queryset = Client.objects.all()
-#     serializer_class = ClientSerializer
-#     permission_classes = [AllowAny]  # Пермишен для проверки аутентификации
-
-#     def post(self, request, *args, **kwargs):
-#         return super().post(request, *args, **kwargs)
-    # Дополнительная логика, если требуется
-    # Например, переопределение метода perform_create для управления созданием объекта
-    # def perform_create(self, serializer):
-    #     # Добавление дополнительных данных перед сохранением объекта
-    #     serializer.save(user=self.request.user) 
-
-
-class ClientAPIView(APIView):
-    permission_classes = [AllowAny]
-
+class ClientRegistrationView(APIView):
+    """
+    Регистрация клиента.
+    Доступно всем.
+    """
     @swagger_auto_schema(
         tags=['client_tag'],
         operation_summary='Create client',
@@ -35,7 +28,9 @@ class ClientAPIView(APIView):
             status.HTTP_400_BAD_REQUEST: 'Invalid data',
         }
     )
+    @permission_classes([AllowAny])
     def post(self, request):
+
         serializer = ClientSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -43,8 +38,55 @@ class ClientAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ClientLoginView(APIView):
+class ClientInfoView(APIView):
+    """
+    Получение данных о клиенте, направившем get запрос.
+    Обновление сведений о клиенте, направившим запрос patch.
+    Требует авторизации.
+    """
+    @swagger_auto_schema(
+        tags=['client_tag'],
+        operation_summary='Get client info',
+        responses={
+            status.HTTP_200_OK: ClientSerializer(),
+            status.HTTP_401_UNAUTHORIZED: 'User not authenticated'
+        }
+    )
+    @authentication_classes([SessionAuthentication])
+    @permission_classes([IsAuthenticated])
+    def get(self, request):
 
+        # Получение информации о клиенте по идентификатору пользователя
+        client = Client.objects.get(pk=request.user.pk)
+        serializer = ClientSerializer(client)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        tags=['client_tag'],
+        operation_summary='Update client (PATCH)',
+        request_body=ClientSerializer(),
+        responses={
+            status.HTTP_200_OK: ClientSerializer(),
+            status.HTTP_400_BAD_REQUEST: 'Invalid data',
+            status.HTTP_401_UNAUTHORIZED: 'User not authenticated'
+        }
+    )
+    @authentication_classes([SessionAuthentication])
+    @permission_classes([IsAuthenticated])
+    def patch(self, request):
+        # Получение объекта клиента по идентификатору пользователя
+        client = Client.objects.get(pk=request.user.pk)
+        # Указание partial=True для частичного обновления
+        serializer = ClientUpdateSerializer(client,
+                                            data=request.data,
+                                            partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ClientLoginView(APIView):
     serializer_class = ClientLoginSerializer
 
     @swagger_auto_schema(
@@ -63,7 +105,9 @@ class ClientLoginView(APIView):
             phone = serializer.validated_data.get('phone')
             password = serializer.validated_data.get('password')
 
-            user = authenticate(request=request, phone=phone, password=password)
+            user = authenticate(request=request,
+                                phone=phone,
+                                password=password)
 
             if user:
                 login(request, user)
@@ -81,12 +125,13 @@ class ClientLogoutView(APIView):
     @swagger_auto_schema(
         tags=['client_tag'],
         operation_summary='Logout',
-        # request_body=ClientLoginSerializer(),
         responses={
-            status.HTTP_200_OK: "{'message': 'Logged out successfully'}",
-            status.HTTP_401_UNAUTHORIZED: 'User not authenticated',
+            status.HTTP_200_OK: "'message':'Logged out successfully'",
+            status.HTTP_401_UNAUTHORIZED: "'message':'User not authenticated'",
         }
     )
+    @authentication_classes([SessionAuthentication])
+    @permission_classes([IsAuthenticated])
     def post(self, request):
         if request.user.is_authenticated:
             logout(request)
@@ -96,3 +141,38 @@ class ClientLogoutView(APIView):
         return Response(
             {'message': 'User not authenticated'},
             status=status.HTTP_401_UNAUTHORIZED)
+
+
+# восстановление пароля
+class ClientPasswordResetView(APIView):
+    """
+    Восстановление пароля клиента на основе телефона и нового пароля.
+    """
+    @permission_classes([AllowAny])
+    @swagger_auto_schema(
+        tags=['client_tag'],
+        operation_summary='Password reset',
+        request_body=ClientPasswordResetSerializer(),
+        responses={
+            status.HTTP_200_OK:
+            "{'message': 'Password reset successfully'}",
+            status.HTTP_404_NOT_FOUND:
+            "{'message': 'Client with this phone does not exist'}",
+        }
+    )
+    def post(self, request):
+        serializer = ClientPasswordResetSerializer(data=request.data)
+        if serializer.is_valid():
+            phone = serializer.validated_data.get('phone')
+            new_password = serializer.validated_data.get('new_password')
+            try:
+                client = Client.objects.get(phone=phone)
+                client.set_password(new_password)
+                client.save(update_fields=['password'])
+                return Response({'message': 'Password reset successfully'},
+                                status=status.HTTP_200_OK)
+            except Client.DoesNotExist:
+                return Response(
+                    {'message': 'Client with this phone does not exist'},
+                    status=status.HTTP_404_NOT_FOUND)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

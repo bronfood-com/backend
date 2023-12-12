@@ -26,7 +26,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('healthcheck/', healthcheck),
     path('client/', include('bronfood.core.client.urls', namespace='client')),
-    # path('client/', include('client.urls', namespace='client')),
 ]
 
 
