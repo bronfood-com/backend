@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Client
+from bronfood.core.client.models import Client
 from django.contrib.auth import authenticate
 
 
@@ -12,6 +12,7 @@ class ClientPasswordResetSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True)
 
 
+# TODO подумать куда вынести логику
 class ClientPasswordRecoverySerializer(serializers.ModelSerializer):
     """
     Сериалайзер модели клиента.
