@@ -11,12 +11,12 @@ from .views import (ClientRegistrationView,
 app_name = 'client'
 
 urlpatterns = [
-    path('registration/', ClientRegistrationView.as_view(), name='index'),
-    path('my_login/', ClientLoginView.as_view(), name='my_login'),
-    path('my_logout/', ClientLogoutView.as_view(), name='my_logout'),
+    path('signup/', ClientRegistrationView.as_view(), name='signup'),
+    path('signin/', ClientLoginView.as_view(), name='signin'),
+    path('signout/', ClientLogoutView.as_view(), name='signout'),
     path('info/', ClientInfoView.as_view(), name='info'),
-    path('password_recovery/',
+    path('password_reset/',
          ClientPasswordResetView.as_view(),
-         name='password_recovery'),
+         name='password_reset'),
     path('', include('rest_framework.urls')),
 ]

@@ -12,23 +12,6 @@ class ClientPasswordResetSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True)
 
 
-# TODO подумать куда вынести логику
-class ClientPasswordRecoverySerializer(serializers.ModelSerializer):
-    """
-    Сериалайзер модели клиента.
-    Обеспечивает кодирование пароля перед сохранением в БД.
-    """
-    class Meta:
-        model = Client
-        fields = ['phone']
-
-    def update(self, instance, validated_data):
-        password = validated_data.pop('password', None)
-        if password:
-            instance.set_password(password)
-        return super().update(instance, validated_data)
-
-
 class ClientSerializer(serializers.ModelSerializer):
     """
     Сериалайзер модели клиента.
