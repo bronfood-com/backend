@@ -12,6 +12,7 @@ from django.contrib.auth import authenticate, login, logout
 from rest_framework.decorators import (permission_classes,
                                        authentication_classes)
 from rest_framework.authentication import SessionAuthentication
+from bronfood.api.constants import ERR_MESSAGE
 
 
 class ClientRegistrationView(APIView):
@@ -20,12 +21,12 @@ class ClientRegistrationView(APIView):
     Доступно всем.
     """
     @swagger_auto_schema(
-        tags=['client_tag'],
-        operation_summary='Create client',
+        tags=['client'],
+        operation_summary='Registration',
         request_body=ClientSerializer(),
         responses={
             status.HTTP_201_CREATED: ClientSerializer(),
-            status.HTTP_400_BAD_REQUEST: 'Invalid data',
+            status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
         }
     )
     @permission_classes([AllowAny])
@@ -35,7 +36,7 @@ class ClientRegistrationView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(ERR_MESSAGE[400], status=status.HTTP_400_BAD_REQUEST)
 
 
 class ClientInfoView(APIView):
@@ -45,30 +46,29 @@ class ClientInfoView(APIView):
     Требует авторизации.
     """
     @swagger_auto_schema(
-        tags=['client_tag'],
-        operation_summary='Get client info',
+        tags=['client'],
+        operation_summary='Get info',
         responses={
             status.HTTP_200_OK: ClientSerializer(),
-            status.HTTP_401_UNAUTHORIZED: 'User not authenticated'
+            status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
+            status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401]
         }
     )
     @authentication_classes([SessionAuthentication])
     @permission_classes([IsAuthenticated])
     def get(self, request):
-
         # Получение информации о клиенте по идентификатору пользователя
         client = Client.objects.get(pk=request.user.pk)
         serializer = ClientSerializer(client)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        tags=['client_tag'],
-        operation_summary='Update client (PATCH)',
+        tags=['client'],
+        operation_summary='Update info',
         request_body=ClientSerializer(),
         responses={
             status.HTTP_200_OK: ClientSerializer(),
-            status.HTTP_400_BAD_REQUEST: 'Invalid data',
-            status.HTTP_401_UNAUTHORIZED: 'User not authenticated'
+            status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
         }
     )
     @authentication_classes([SessionAuthentication])
@@ -83,20 +83,20 @@ class ClientInfoView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(ERR_MESSAGE[400], status=status.HTTP_400_BAD_REQUEST)
 
 
 class ClientLoginView(APIView):
     serializer_class = ClientLoginSerializer
 
     @swagger_auto_schema(
-        tags=['client_tag'],
-        operation_summary='Create login',
+        tags=['client'],
+        operation_summary='Login',
         request_body=ClientLoginSerializer(),
         responses={
-            status.HTTP_200_OK: "{'message': 'Logged in successfully'}",
-            status.HTTP_401_UNAUTHORIZED: 'Invalid credentials',
-            status.HTTP_400_BAD_REQUEST: 'Invalid data'
+            status.HTTP_200_OK: None,
+            status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
+            status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401],
         }
     )
     def post(self, request):
@@ -111,23 +111,20 @@ class ClientLoginView(APIView):
 
             if user:
                 login(request, user)
-                return Response(
-                    {'message': 'Logged in successfully'},
-                    status=status.HTTP_200_OK)
+                return Response(status=status.HTTP_200_OK)
             else:
-                return Response(
-                    {'message': 'Invalid credentials'},
-                    status=status.HTTP_401_UNAUTHORIZED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response(ERR_MESSAGE[401],
+                                status=status.HTTP_401_UNAUTHORIZED)
+        return Response(ERR_MESSAGE[400], status=status.HTTP_400_BAD_REQUEST)
 
 
 class ClientLogoutView(APIView):
     @swagger_auto_schema(
-        tags=['client_tag'],
+        tags=['client'],
         operation_summary='Logout',
         responses={
-            status.HTTP_200_OK: "'message':'Logged out successfully'",
-            status.HTTP_401_UNAUTHORIZED: "'message':'User not authenticated'",
+            status.HTTP_200_OK: None,
+            status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401],
         }
     )
     @authentication_classes([SessionAuthentication])
@@ -135,29 +132,24 @@ class ClientLogoutView(APIView):
     def post(self, request):
         if request.user.is_authenticated:
             logout(request)
-            return Response(
-                {'message': 'Logged out successfully'},
-                status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_200_OK)
         return Response(
-            {'message': 'User not authenticated'},
+            ERR_MESSAGE[401],
             status=status.HTTP_401_UNAUTHORIZED)
 
 
-# восстановление пароля
 class ClientPasswordResetView(APIView):
     """
     Восстановление пароля клиента на основе телефона и нового пароля.
     """
     @permission_classes([AllowAny])
     @swagger_auto_schema(
-        tags=['client_tag'],
-        operation_summary='Password reset',
+        tags=['client'],
+        operation_summary='Reset password',
         request_body=ClientPasswordResetSerializer(),
         responses={
-            status.HTTP_200_OK:
-            "{'message': 'Password reset successfully'}",
-            status.HTTP_404_NOT_FOUND:
-            "{'message': 'Client with this phone does not exist'}",
+            status.HTTP_200_OK: None,
+            status.HTTP_404_NOT_FOUND: ERR_MESSAGE[404],
         }
     )
     def post(self, request):
@@ -169,10 +161,9 @@ class ClientPasswordResetView(APIView):
                 client = Client.objects.get(phone=phone)
                 client.set_password(new_password)
                 client.save(update_fields=['password'])
-                return Response({'message': 'Password reset successfully'},
-                                status=status.HTTP_200_OK)
+                return Response(status=status.HTTP_200_OK)
             except Client.DoesNotExist:
-                return Response(
-                    {'message': 'Client with this phone does not exist'},
-                    status=status.HTTP_404_NOT_FOUND)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response(ERR_MESSAGE[404],
+                                status=status.HTTP_404_NOT_FOUND)
+        return Response(ERR_MESSAGE[400],
+                        status=status.HTTP_400_BAD_REQUEST)
