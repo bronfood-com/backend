@@ -1,6 +1,4 @@
-# Создать эдпоинты для клиента в api/client (views, serializers, urls)
-# интегрировать их в основное приложение проекта (пока пустые)
-from django.urls import path, include
+from django.urls import path
 from .views import (ClientRegistrationView,
                     ClientInfoView,
                     ClientLoginView,
@@ -18,5 +16,4 @@ urlpatterns = [
     path('password_reset/',
          ClientPasswordResetView.as_view(),
          name='password_reset'),
-    path('', include('rest_framework.urls')),
 ]

@@ -8,3 +8,9 @@ class CustomUnicodeUsernameValidator(validators.RegexValidator):
         "from English and Russian alphabets with only one space between words."
     )
     flags = 0
+
+
+class OnlyDigitsValidator(validators.RegexValidator):
+    regex = r'^\d{11,18}$'
+    message = 'Enter only digits between 11 and 18 characters.'
+    flags = 0
