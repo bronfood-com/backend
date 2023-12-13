@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from .validators import CustomUnicodeUsernameValidator
+from .validators import (CustomUnicodeUsernameValidator,
+                         OnlyDigitsValidator)
 
 
 class UserAccountManager(BaseUserManager):
@@ -44,7 +45,9 @@ class UserAccount(AbstractBaseUser):
                             default=Role.CLIENT)
     username = models.CharField(max_length=200,
                                 validators=[CustomUnicodeUsernameValidator])
-    phone = models.CharField(max_length=18, unique=True)
+    phone = models.CharField(max_length=18,
+                             unique=True,
+                             validators=[OnlyDigitsValidator])
     status = models.SmallIntegerField(choices=Status.choices,
                                       default=Status.UNCONFIRMED)
     USERNAME_FIELD = "phone"

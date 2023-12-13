@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from bronfood.core.client.models import Client
 from django.contrib.auth import authenticate
+from bronfood.core.useraccount.validators import OnlyDigitsValidator
 
 
 class ClientPasswordResetSerializer(serializers.Serializer):
@@ -8,7 +9,8 @@ class ClientPasswordResetSerializer(serializers.Serializer):
     Сериализатор для восстановления пароля клиента.
     Осуществляется на основе телефона и нового пароля.
     """
-    phone = serializers.CharField(max_length=18)
+    phone = serializers.CharField(max_length=18,
+                                  validators=[OnlyDigitsValidator()])
     new_password = serializers.CharField(write_only=True)
 
 
@@ -18,7 +20,10 @@ class ClientSerializer(serializers.ModelSerializer):
     Обеспечивает кодирование пароля перед сохранением в БД.
     """
     password = serializers.CharField(
-        write_only=True
+        write_only=True,
+    )
+    phone = serializers.CharField(
+        validators=[OnlyDigitsValidator()]
     )
 
     class Meta:
@@ -40,7 +45,8 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
     Сериализатор для обновления объекта клиента.
     """
     password = serializers.CharField(required=False)
-    phone = serializers.IntegerField(required=False)
+    phone = serializers.IntegerField(required=False,
+                                     validators=[OnlyDigitsValidator()])
     username = serializers.CharField(required=False)
 
     class Meta:
@@ -59,7 +65,8 @@ class ClientLoginSerializer(serializers.Serializer):
     Сериализатор для входа клиента.
     """
     phone = serializers.CharField()
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True,
+                                     validators=[OnlyDigitsValidator()])
 
     def validate(self, data):
         phone = data.get('phone')
