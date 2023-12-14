@@ -1,3 +1,4 @@
+# noqa: W503, W504
 from rest_framework import permissions
 
 
@@ -8,11 +9,9 @@ class IsAuthenticatedRestaurantOwner(permissions.BasePermission):
             return True
 
     def has_object_permission(self, request, view, obj):
-        return (
-            request.method in permissions.SAFE_METHODS
-            or request.user == obj.author
+        return request.method in permissions.SAFE_METHODS\
+            or request.user == obj.author\
             or request.user.role.OWMER
-        )
 
 
 class IsAuthenticatedRestaurantAdmin(permissions.BasePermission):
@@ -22,10 +21,8 @@ class IsAuthenticatedRestaurantAdmin(permissions.BasePermission):
             return True
 
     def has_object_permission(self, request, view, obj):
-        return (
-            request.method in permissions.SAFE_METHODS
-            or request.user.role.RESTAURANT_ADMIN
-        )
+        return request.method in permissions.SAFE_METHODS or\
+            request.user.role.RESTAURANT_ADMIN
 
 
 class IsAuthenticatedClient(permissions.BasePermission):
@@ -35,7 +32,5 @@ class IsAuthenticatedClient(permissions.BasePermission):
             return True
 
     def has_object_permission(self, request, view, obj):
-        return (
-            request.method in permissions.SAFE_METHODS
+        return request.method in permissions.SAFE_METHODS\
             or request.user.role.CLIENT
-        )
