@@ -64,9 +64,8 @@ class ClientLoginSerializer(serializers.Serializer):
     """
     Сериализатор для входа клиента.
     """
-    phone = serializers.CharField()
-    password = serializers.CharField(write_only=True,
-                                     validators=[OnlyDigitsValidator()])
+    phone = serializers.CharField(validators=[OnlyDigitsValidator()])
+    password = serializers.CharField(write_only=True)
 
     def validate(self, data):
         phone = data.get('phone')
@@ -85,3 +84,12 @@ class ClientLoginSerializer(serializers.Serializer):
                 'Both phone and password are required fields.'
             )
         return data
+
+
+class ClientObjAndCookieSerializer(serializers.Serializer):
+    """
+    Предоставление данных о клиенте и сессии.
+    """
+    session_key = serializers.CharField()
+    phone = serializers.CharField()
+    username = serializers.CharField()
