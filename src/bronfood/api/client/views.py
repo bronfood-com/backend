@@ -2,7 +2,8 @@ from bronfood.core.client.models import Client
 from .serializers import (ClientSerializer,
                           ClientLoginSerializer,
                           ClientUpdateSerializer,
-                          ClientPasswordResetSerializer)
+                          ClientPasswordResetSerializer,
+                          ClientObjAndCookieSerializer)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
@@ -13,30 +14,7 @@ from rest_framework.decorators import (permission_classes,
                                        authentication_classes)
 from rest_framework.authentication import SessionAuthentication
 from bronfood.api.constants import ERR_MESSAGE
-
-
-class ClientRegistrationView(APIView):
-    """
-    Регистрация клиента.
-    Доступно всем.
-    """
-    @swagger_auto_schema(
-        tags=['client'],
-        operation_summary='Registration',
-        request_body=ClientSerializer(),
-        responses={
-            status.HTTP_201_CREATED: ClientSerializer(),
-            status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
-        }
-    )
-    @permission_classes([AllowAny])
-    def post(self, request):
-
-        serializer = ClientSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(ERR_MESSAGE[400], status=status.HTTP_400_BAD_REQUEST)
+from django.db import transaction
 
 
 class ClientInfoView(APIView):
@@ -165,5 +143,65 @@ class ClientPasswordResetView(APIView):
             except Client.DoesNotExist:
                 return Response(ERR_MESSAGE[404],
                                 status=status.HTTP_404_NOT_FOUND)
+        return Response(ERR_MESSAGE[400],
+                        status=status.HTTP_400_BAD_REQUEST)
+
+
+class ClientRegistrationView(APIView):
+    """
+    Создание и авторизация нового клиента.
+    """
+    serializer_class = ClientSerializer
+
+    @permission_classes([AllowAny])
+    @swagger_auto_schema(
+        tags=['client'],
+        operation_summary='Registration',
+        request_body=ClientSerializer(),
+        responses={
+            status.HTTP_200_OK: ClientObjAndCookieSerializer(),
+            status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
+            status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401],
+        }
+    )
+    def post(self, request):
+        # Создание клиента
+        client_serializer = self.serializer_class(data=request.data)
+        if client_serializer.is_valid():
+            try:
+                # Оборачиваем создание клиента и авторизации в транзакцию
+                with transaction.atomic():
+                    # Создание клиента
+                    client_serializer.save()
+                    # Авторизация клиента
+                    phone = client_serializer.validated_data.get('phone')
+                    password = client_serializer.validated_data.get('password')
+                    username = client_serializer.validated_data.get('username')
+                    user = authenticate(request=request,
+                                        phone=phone,
+                                        password=password)
+                    login(request, user)
+                    # Получение сессионных cookies
+                    session_key = request.session.session_key
+                    response_data = {
+                        'session_key': session_key,
+                        'phone': phone,
+                        'username': username
+                    }
+                    # Используем сериализатор для возврата данных
+                    response_serializer = ClientObjAndCookieSerializer(
+                        data=response_data)
+                    if response_serializer.is_valid():
+                        return Response(response_serializer.validated_data,
+                                        status=status.HTTP_200_OK)
+                    else:
+                        return Response(ERR_MESSAGE[400],
+                                        status=status.HTTP_400_BAD_REQUEST)
+            # перехватываем любую ошибку в транзакции
+            except Exception:
+                return Response(ERR_MESSAGE[400],
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        # не пройдена валидация данных для создания клиента
         return Response(ERR_MESSAGE[400],
                         status=status.HTTP_400_BAD_REQUEST)
