@@ -19,8 +19,8 @@ class Migration(migrations.Migration):
                 ('password', models.CharField(max_length=128, verbose_name='password')),
                 ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
                 ('role', models.CharField(choices=[('ADMIN', 'admin'), ('CLIENT', 'client'), ('OWNER', 'owner'), ('RESTAURANT_ADMIN', 'restaurant_admin')], default='CLIENT', max_length=16)),
-                ('username', models.CharField(max_length=200, validators=[bronfood.core.useraccount.validators.CustomUnicodeUsernameValidator])),
-                ('phone', models.CharField(max_length=18, unique=True, validators=[bronfood.core.useraccount.validators.OnlyDigitsValidator])),
+                ('username', models.CharField(max_length=200, validators=[bronfood.core.useraccount.validators.UsernameValidator])),
+                ('phone', models.CharField(max_length=18, unique=True, validators=[bronfood.core.useraccount.validators.KazakhstanPhoneNumberValidator])),
                 ('status', models.SmallIntegerField(choices=[(0, 'Unconfirmed'), (1, 'Confirmed'), (2, 'Blocked')], default=0)),
             ],
             options={
