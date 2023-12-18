@@ -10,6 +10,3 @@ exclude = '''
   | .wsgi.py
 )
 '''
-
-[mypy]
-ignore_missing_imports = True
