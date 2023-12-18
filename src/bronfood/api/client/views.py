@@ -1,9 +1,11 @@
-from bronfood.core.client.models import Client
+from bronfood.core.client.models import Client, UserAccount
 from .serializers import (ClientSerializer,
                           ClientLoginSerializer,
                           ClientUpdateSerializer,
                           ClientPasswordResetSerializer,
-                          ClientObjAndCookieSerializer)
+                          ClientObjAndSessionIdSerializer,
+                          SessionIdSerializer,
+                          ConfirmationSerializer)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
@@ -72,7 +74,7 @@ class ClientLoginView(APIView):
         operation_summary='Login',
         request_body=ClientLoginSerializer(),
         responses={
-            status.HTTP_200_OK: None,
+            status.HTTP_200_OK: SessionIdSerializer(),
             status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
             status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401],
         }
@@ -89,7 +91,17 @@ class ClientLoginView(APIView):
 
             if user:
                 login(request, user)
-                return Response(status=status.HTTP_200_OK)
+                session_key = request.session.session_key
+                response_data = {
+                    'session_key': session_key,
+                }
+                response_serializer = SessionIdSerializer(
+                    data=response_data)
+                if response_serializer.is_valid():
+                    return Response(response_serializer.validated_data,
+                                    status=status.HTTP_200_OK)
+                return Response(ERR_MESSAGE[401],
+                                status=status.HTTP_401_UNAUTHORIZED)
             else:
                 return Response(ERR_MESSAGE[401],
                                 status=status.HTTP_401_UNAUTHORIZED)
@@ -159,7 +171,7 @@ class ClientRegistrationView(APIView):
         operation_summary='Registration',
         request_body=ClientSerializer(),
         responses={
-            status.HTTP_200_OK: ClientObjAndCookieSerializer(),
+            status.HTTP_200_OK: ClientObjAndSessionIdSerializer(),
             status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
             status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401],
         }
@@ -189,7 +201,7 @@ class ClientRegistrationView(APIView):
                         'username': username
                     }
                     # Используем сериализатор для возврата данных
-                    response_serializer = ClientObjAndCookieSerializer(
+                    response_serializer = ClientObjAndSessionIdSerializer(
                         data=response_data)
                     if response_serializer.is_valid():
                         return Response(response_serializer.validated_data,
@@ -205,3 +217,41 @@ class ClientRegistrationView(APIView):
         # не пройдена валидация данных для создания клиента
         return Response(ERR_MESSAGE[400],
                         status=status.HTTP_400_BAD_REQUEST)
+
+
+class ClientConfirmationView(APIView):
+    """
+    Подтверждение клиента.
+    """
+    serializer_class = ConfirmationSerializer
+    VALID_CODE = "0000"
+
+    @permission_classes([IsAuthenticated])
+    @swagger_auto_schema(
+        tags=['client'],
+        operation_summary='Client confirmation',
+        request_body=ConfirmationSerializer(),
+        responses={
+            status.HTTP_200_OK: None,
+            status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
+            status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401],
+        }
+    )
+    def post(self, request):
+        confirmation_serializer = self.serializer_class(
+            data=request.data)
+        if confirmation_serializer.is_valid():
+            confirmation_code = (
+                confirmation_serializer.validated_data['confirmation_code'])
+            # Получаем авторизованного пользователя из запроса
+            client = request.user
+            if confirmation_code == self.VALID_CODE:
+                client.status = UserAccount.Status.CONFIRMED
+                client.save()
+                return Response(status=status.HTTP_200_OK)
+            else:
+                return Response(ERR_MESSAGE[400],
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(ERR_MESSAGE[401],
+                            status=status.HTTP_401_UNAUTHORIZED)

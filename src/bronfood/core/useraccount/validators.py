@@ -25,3 +25,9 @@ class PasswordValidator(validators.RegexValidator):
         'only Latin letters and the allowed symbols: !@#$%^&*()-_+=<>?'
     )
     flags = 0
+
+
+class ConfirmationValidator(validators.RegexValidator):
+    regex = r'^\d{4}$'
+    message = 'Input 4 digits.'
+    flags = 0
