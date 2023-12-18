@@ -1,4 +1,3 @@
-# noqa: W503, W504
 from rest_framework import permissions
 
 
@@ -11,7 +10,7 @@ class IsAuthenticatedRestaurantOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.method in permissions.SAFE_METHODS\
             or request.user == obj.author\
-            or request.user.role.OWMER
+            or request.user.role.OWNER
 
 
 class IsAuthenticatedRestaurantAdmin(permissions.BasePermission):
