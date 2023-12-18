@@ -3,7 +3,8 @@ from .views import (ClientRegistrationView,
                     ClientProfileView,
                     ClientLoginView,
                     ClientLogoutView,
-                    ClientPasswordResetView)
+                    ClientPasswordResetView,
+                    ClientConfirmationView)
 
 
 app_name = 'client'
@@ -16,4 +17,7 @@ urlpatterns = [
     path('password_reset/',
          ClientPasswordResetView.as_view(),
          name='password_reset'),
+    path('confirmation/',
+         ClientConfirmationView.as_view(),
+         name='confirmation')
 ]

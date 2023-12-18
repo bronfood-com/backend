@@ -4,7 +4,8 @@ from django.contrib.auth import authenticate
 from bronfood.core.useraccount.validators import (
     KazakhstanPhoneNumberValidator,
     PasswordValidator,
-    UsernameValidator
+    UsernameValidator,
+    ConfirmationValidator
 )
 
 
@@ -108,10 +109,27 @@ class ClientLoginSerializer(serializers.Serializer):
         return data
 
 
-class ClientObjAndCookieSerializer(serializers.Serializer):
+class ClientObjAndSessionIdSerializer(serializers.Serializer):
     """
     Предоставление данных о клиенте и сессии.
     """
     session_key = serializers.CharField()
     phone = serializers.CharField()
     username = serializers.CharField()
+
+
+class SessionIdSerializer(serializers.Serializer):
+    """
+    Предоставление данных о сессии.
+    """
+    session_key = serializers.CharField()
+
+
+class ConfirmationSerializer(serializers.Serializer):
+    """
+    Код подтверждения.
+    """
+    confirmation_code = serializers.CharField(
+        validators=[ConfirmationValidator()],
+        write_only=True,
+    )
