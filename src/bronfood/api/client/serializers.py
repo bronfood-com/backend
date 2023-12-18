@@ -1,7 +1,11 @@
 from rest_framework import serializers
 from bronfood.core.client.models import Client
 from django.contrib.auth import authenticate
-from bronfood.core.useraccount.validators import OnlyDigitsValidator
+from bronfood.core.useraccount.validators import (
+    KazakhstanPhoneNumberValidator,
+    PasswordValidator,
+    UsernameValidator
+)
 
 
 class ClientPasswordResetSerializer(serializers.Serializer):
@@ -9,9 +13,13 @@ class ClientPasswordResetSerializer(serializers.Serializer):
     Сериализатор для восстановления пароля клиента.
     Осуществляется на основе телефона и нового пароля.
     """
-    phone = serializers.CharField(max_length=18,
-                                  validators=[OnlyDigitsValidator()])
-    new_password = serializers.CharField(write_only=True)
+    phone = serializers.CharField(
+        validators=[KazakhstanPhoneNumberValidator()]
+    )
+    new_password = serializers.CharField(
+        write_only=True,
+        validators=[PasswordValidator()]
+    )
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -21,9 +29,10 @@ class ClientSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(
         write_only=True,
+        validators=[PasswordValidator()]
     )
     phone = serializers.CharField(
-        validators=[OnlyDigitsValidator()]
+        validators=[KazakhstanPhoneNumberValidator()]
     )
 
     class Meta:
@@ -44,10 +53,18 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
     """
     Сериализатор для обновления объекта клиента.
     """
-    password = serializers.CharField(required=False)
-    phone = serializers.IntegerField(required=False,
-                                     validators=[OnlyDigitsValidator()])
-    username = serializers.CharField(required=False)
+    password = serializers.CharField(
+        required=False,
+        validators=[PasswordValidator()]
+    )
+    phone = serializers.IntegerField(
+        required=False,
+        validators=[KazakhstanPhoneNumberValidator()]
+    )
+    username = serializers.CharField(
+        required=False,
+        validators=[UsernameValidator()]
+    )
 
     class Meta:
         model = Client
@@ -64,8 +81,13 @@ class ClientLoginSerializer(serializers.Serializer):
     """
     Сериализатор для входа клиента.
     """
-    phone = serializers.CharField(validators=[OnlyDigitsValidator()])
-    password = serializers.CharField(write_only=True)
+    phone = serializers.CharField(
+        validators=[KazakhstanPhoneNumberValidator()]
+    )
+    password = serializers.CharField(
+        validators=[PasswordValidator()],
+        write_only=True,
+    )
 
     def validate(self, data):
         phone = data.get('phone')

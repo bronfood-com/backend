@@ -17,7 +17,7 @@ from bronfood.api.constants import ERR_MESSAGE
 from django.db import transaction
 
 
-class ClientInfoView(APIView):
+class ClientProfileView(APIView):
     """
     Получение данных о клиенте, направившем get запрос.
     Обновление сведений о клиенте, направившим запрос patch.
@@ -25,7 +25,7 @@ class ClientInfoView(APIView):
     """
     @swagger_auto_schema(
         tags=['client'],
-        operation_summary='Get info',
+        operation_summary='Profile',
         responses={
             status.HTTP_200_OK: ClientSerializer(),
             status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
@@ -42,7 +42,7 @@ class ClientInfoView(APIView):
 
     @swagger_auto_schema(
         tags=['client'],
-        operation_summary='Update info',
+        operation_summary='Update profile',
         request_body=ClientSerializer(),
         responses={
             status.HTTP_200_OK: ClientSerializer(),

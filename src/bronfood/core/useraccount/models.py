@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from .validators import (CustomUnicodeUsernameValidator,
-                         OnlyDigitsValidator)
+from .validators import (UsernameValidator,
+                         KazakhstanPhoneNumberValidator)
 
 
 class UserAccountManager(BaseUserManager):
@@ -44,10 +44,10 @@ class UserAccount(AbstractBaseUser):
     role = models.CharField(max_length=16, choices=Role.choices,
                             default=Role.CLIENT)
     username = models.CharField(max_length=200,
-                                validators=[CustomUnicodeUsernameValidator])
+                                validators=[UsernameValidator])
     phone = models.CharField(max_length=18,
                              unique=True,
-                             validators=[OnlyDigitsValidator])
+                             validators=[KazakhstanPhoneNumberValidator])
     status = models.SmallIntegerField(choices=Status.choices,
                                       default=Status.UNCONFIRMED)
     USERNAME_FIELD = "phone"
