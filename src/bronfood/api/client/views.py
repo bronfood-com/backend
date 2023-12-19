@@ -1,30 +1,32 @@
-from bronfood.core.client.models import Client, UserAccount
-from .serializers import (ClientSerializer,
-                          ClientLoginSerializer,
-                          ClientUpdateSerializer,
-                          ClientPasswordResetSerializer,
-                          ClientObjAndSessionIdSerializer,
-                          SessionIdSerializer,
-                          ConfirmationSerializer)
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from django.contrib.auth import authenticate, login, logout
-from rest_framework.decorators import (permission_classes,
-                                       authentication_classes)
-from rest_framework.authentication import SessionAuthentication
+
 from bronfood.api.constants import ERR_MESSAGE
-from django.db import transaction
+from bronfood.api.views import BaseAPIView
+from bronfood.api.client.serializers import (
+    ClientSerializer,
+    ClientLoginSerializer,
+    ClientUpdateSerializer,
+    ClientPasswordResetSerializer,
+    ClientResponseSerializer,
+    ConfirmationSerializer,
+)
+from bronfood.core.client.models import Client, UserAccount
 
 
-class ClientProfileView(APIView):
+class ClientProfileView(BaseAPIView):
+    permission_classes = (IsAuthenticated,)
     """
     Получение данных о клиенте, направившем get запрос.
     Обновление сведений о клиенте, направившим запрос patch.
     Требует авторизации.
     """
+
     @swagger_auto_schema(
         tags=['client'],
         operation_summary='Profile',
@@ -34,12 +36,10 @@ class ClientProfileView(APIView):
             status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401]
         }
     )
-    @authentication_classes([SessionAuthentication])
-    @permission_classes([IsAuthenticated])
     def get(self, request):
         # Получение информации о клиенте по идентификатору пользователя
-        client = Client.objects.get(pk=request.user.pk)
-        serializer = ClientSerializer(client)
+        serializer = ClientResponseSerializer(data={'phone': self.current_client.phone})
+        serializer.is_valid()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -51,13 +51,10 @@ class ClientProfileView(APIView):
             status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
         }
     )
-    @authentication_classes([SessionAuthentication])
-    @permission_classes([IsAuthenticated])
     def patch(self, request):
         # Получение объекта клиента по идентификатору пользователя
-        client = Client.objects.get(pk=request.user.pk)
         # Указание partial=True для частичного обновления
-        serializer = ClientUpdateSerializer(client,
+        serializer = ClientUpdateSerializer(self.current_client,
                                             data=request.data,
                                             partial=True)
         if serializer.is_valid():
@@ -66,7 +63,7 @@ class ClientProfileView(APIView):
         return Response(ERR_MESSAGE[400], status=status.HTTP_400_BAD_REQUEST)
 
 
-class ClientLoginView(APIView):
+class ClientLoginView(BaseAPIView):
     serializer_class = ClientLoginSerializer
 
     @swagger_auto_schema(
@@ -74,65 +71,51 @@ class ClientLoginView(APIView):
         operation_summary='Login',
         request_body=ClientLoginSerializer(),
         responses={
-            status.HTTP_200_OK: SessionIdSerializer(),
+            status.HTTP_200_OK: ClientResponseSerializer(),
             status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
             status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401],
         }
     )
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            phone = serializer.validated_data.get('phone')
-            password = serializer.validated_data.get('password')
+        serializer.is_valid(raise_exception=True)
+        phone = serializer.validated_data.get('phone')
+        password = serializer.validated_data.get('password')
 
-            user = authenticate(request=request,
-                                phone=phone,
-                                password=password)
+        user = authenticate(request=request,
+                            phone=phone,
+                            password=password)
 
-            if user:
-                login(request, user)
-                session_key = request.session.session_key
-                response_data = {
-                    'session_key': session_key,
-                }
-                response_serializer = SessionIdSerializer(
-                    data=response_data)
-                if response_serializer.is_valid():
-                    return Response(response_serializer.validated_data,
-                                    status=status.HTTP_200_OK)
-                return Response(ERR_MESSAGE[401],
-                                status=status.HTTP_401_UNAUTHORIZED)
-            else:
-                return Response(ERR_MESSAGE[401],
-                                status=status.HTTP_401_UNAUTHORIZED)
-        return Response(ERR_MESSAGE[400], status=status.HTTP_400_BAD_REQUEST)
+        if not user:
+            return Response(ERR_MESSAGE[401],
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        login(request, user)
+        response_serializer = ClientResponseSerializer(data={'phone': phone})
+        response_serializer.is_valid(raise_exception=True)
+        return Response(response_serializer)
 
 
-class ClientLogoutView(APIView):
+class ClientLogoutView(BaseAPIView):
+    permission_classes = (IsAuthenticated,)
+
     @swagger_auto_schema(
         tags=['client'],
         operation_summary='Logout',
         responses={
-            status.HTTP_200_OK: None,
-            status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401],
+            status.HTTP_204_NO_CONTENT: '',
         }
     )
-    @authentication_classes([SessionAuthentication])
-    @permission_classes([IsAuthenticated])
     def post(self, request):
-        if request.user.is_authenticated:
-            logout(request)
-            return Response(status=status.HTTP_200_OK)
-        return Response(
-            ERR_MESSAGE[401],
-            status=status.HTTP_401_UNAUTHORIZED)
+        logout(request)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class ClientPasswordResetView(APIView):
+class ClientPasswordResetView(BaseAPIView):
     """
     Восстановление пароля клиента на основе телефона и нового пароля.
     """
-    @permission_classes([AllowAny])
+
     @swagger_auto_schema(
         tags=['client'],
         operation_summary='Reset password',
@@ -144,89 +127,59 @@ class ClientPasswordResetView(APIView):
     )
     def post(self, request):
         serializer = ClientPasswordResetSerializer(data=request.data)
-        if serializer.is_valid():
-            phone = serializer.validated_data.get('phone')
-            new_password = serializer.validated_data.get('new_password')
-            try:
-                client = Client.objects.get(phone=phone)
-                client.set_password(new_password)
-                client.save(update_fields=['password'])
-                return Response(status=status.HTTP_200_OK)
-            except Client.DoesNotExist:
-                return Response(ERR_MESSAGE[404],
-                                status=status.HTTP_404_NOT_FOUND)
-        return Response(ERR_MESSAGE[400],
-                        status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        phone = serializer.validated_data.get('phone')
+        new_password = serializer.validated_data.get('new_password')
+        client = get_object_or_404(Client, phone=phone)
+        client.set_password(new_password)
+        client.save(update_fields=['password'])
+        return Response(status=status.HTTP_200_OK)
 
 
-class ClientRegistrationView(APIView):
+class ClientRegistrationView(BaseAPIView):
     """
     Создание и авторизация нового клиента.
     """
     serializer_class = ClientSerializer
 
-    @permission_classes([AllowAny])
     @swagger_auto_schema(
         tags=['client'],
         operation_summary='Registration',
         request_body=ClientSerializer(),
         responses={
-            status.HTTP_200_OK: ClientObjAndSessionIdSerializer(),
+            status.HTTP_200_OK: ClientResponseSerializer(),
             status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
-            status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401],
         }
     )
     def post(self, request):
         # Создание клиента
         client_serializer = self.serializer_class(data=request.data)
-        if client_serializer.is_valid():
-            try:
-                # Оборачиваем создание клиента и авторизации в транзакцию
-                with transaction.atomic():
-                    # Создание клиента
-                    client_serializer.save()
-                    # Авторизация клиента
-                    phone = client_serializer.validated_data.get('phone')
-                    password = client_serializer.validated_data.get('password')
-                    username = client_serializer.validated_data.get('username')
-                    user = authenticate(request=request,
-                                        phone=phone,
-                                        password=password)
-                    login(request, user)
-                    # Получение сессионных cookies
-                    session_key = request.session.session_key
-                    response_data = {
-                        'session_key': session_key,
-                        'phone': phone,
-                        'username': username
-                    }
-                    # Используем сериализатор для возврата данных
-                    response_serializer = ClientObjAndSessionIdSerializer(
-                        data=response_data)
-                    if response_serializer.is_valid():
-                        return Response(response_serializer.validated_data,
-                                        status=status.HTTP_200_OK)
-                    else:
-                        return Response(ERR_MESSAGE[400],
-                                        status=status.HTTP_400_BAD_REQUEST)
-            # перехватываем любую ошибку в транзакции
-            except Exception:
-                return Response(ERR_MESSAGE[400],
-                                status=status.HTTP_400_BAD_REQUEST)
-
-        # не пройдена валидация данных для создания клиента
-        return Response(ERR_MESSAGE[400],
-                        status=status.HTTP_400_BAD_REQUEST)
+        client_serializer.is_valid(raise_exception=True)
+        # Создание клиента
+        client_serializer.save()
+        # Авторизация клиента
+        phone = client_serializer.validated_data.get('phone')
+        password = client_serializer.validated_data.get('password')
+        user = authenticate(
+            request=request,
+            phone=phone,
+            password=password,
+        )
+        login(request, user)
+        # Используем сериализатор для возврата данных
+        response_serializer = ClientResponseSerializer(data={'phone': phone})
+        response_serializer.is_valid(raise_exception=True)
+        return Response(response_serializer.validated_data, status=status.HTTP_200_OK)
 
 
-class ClientConfirmationView(APIView):
+class ClientConfirmationView(BaseAPIView):
+    permission_classes = (IsAuthenticated,)
     """
     Подтверждение клиента.
     """
     serializer_class = ConfirmationSerializer
     VALID_CODE = "0000"
 
-    @permission_classes([IsAuthenticated])
     @swagger_auto_schema(
         tags=['client'],
         operation_summary='Client confirmation',
@@ -238,20 +191,20 @@ class ClientConfirmationView(APIView):
         }
     )
     def post(self, request):
-        confirmation_serializer = self.serializer_class(
-            data=request.data)
-        if confirmation_serializer.is_valid():
-            confirmation_code = (
-                confirmation_serializer.validated_data['confirmation_code'])
-            # Получаем авторизованного пользователя из запроса
-            client = request.user
-            if confirmation_code == self.VALID_CODE:
-                client.status = UserAccount.Status.CONFIRMED
-                client.save()
-                return Response(status=status.HTTP_200_OK)
-            else:
-                return Response(ERR_MESSAGE[400],
-                                status=status.HTTP_400_BAD_REQUEST)
+        confirmation_serializer = self.serializer_class(data=request.data)
+        confirmation_serializer.is_valid(raise_exception=True)
+        confirmation_code = confirmation_serializer.validated_data['confirmation_code']
+        # Получаем авторизованного пользователя из запроса
+
+        try:
+            ...
+            # какая-то функция из клиента проверяет confirmation_code
+        except Exception as e:
+            # какой-то Exception - выбрасывает клиент по валидации смс,
+            # если оно неверпное, нужно обработать и сделать Validation error
+            raise ValidationError('Invalid confirmation code')
         else:
-            return Response(ERR_MESSAGE[401],
-                            status=status.HTTP_401_UNAUTHORIZED)
+            self.current_client.status = UserAccount.Status.CONFIRMED
+            self.current_client.save(update_fields=['status', ])
+
+        return Response(status=status.HTTP_200_OK)

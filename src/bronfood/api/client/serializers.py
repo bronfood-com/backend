@@ -38,7 +38,7 @@ class ClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Client
-        fields = ['password', 'phone', 'username']
+        fields = ['password', 'phone', ]
 
     def create(self, validated_data):
         password = validated_data.pop('password', None)
@@ -109,20 +109,11 @@ class ClientLoginSerializer(serializers.Serializer):
         return data
 
 
-class ClientObjAndSessionIdSerializer(serializers.Serializer):
+class ClientResponseSerializer(serializers.Serializer):
     """
-    Предоставление данных о клиенте и сессии.
+    Предоставление данных о клиенте.
     """
-    session_key = serializers.CharField()
     phone = serializers.CharField()
-    username = serializers.CharField()
-
-
-class SessionIdSerializer(serializers.Serializer):
-    """
-    Предоставление данных о сессии.
-    """
-    session_key = serializers.CharField()
 
 
 class ConfirmationSerializer(serializers.Serializer):
