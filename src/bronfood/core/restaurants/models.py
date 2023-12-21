@@ -1,52 +1,76 @@
 from django.db import models
 
 
-class Tag(models.Model):
-    name = models.CharField('Название', max_length=255, unique=True)
+class Complement(models.Model):
+    '''Дополнение к основному блюду.'''
+    name = models.CharField(
+        'Дополнение',
+        max_length=200
+    )
+    price = models.PositiveIntegerField('Цена')
+
+    class Meta:
+        verbose_name = 'Дополнение'
+        verbose_name_plural = 'Дополнения'
 
     def __str__(self):
         return self.name
 
 
 class Dish(models.Model):
+    """Блюдо."""
     name = models.CharField('Название блюда', max_length=255)
     description = models.CharField('Описание', max_length=255, null=True)
     price = models.PositiveIntegerField('Цена')
-    pic = models.ImageField('Изображение блюда', upload_to='pics')
+    image = models.ImageField('Изображение блюда', upload_to='pics')
+    size = models.CharField('Размер блюда', max_length=255)
+    wait = models.PositiveIntegerField('Время ожидания')
+    tags = models.CharField('Теги', max_length=50)
+    complement = models.ForeignKey(
+        Complement,
+        verbose_name='Дополнения',
+        on_delete=models.CASCADE
+    )
 
     def __str__(self):
         return self.name
 
 
 class Menu(models.Model):
-    is_active = models.BooleanField('Активно ли', default=True)
-    pic = models.ImageField('Изображение меню', upload_to='pics', null=True, blank=True)
+    """Модель меню."""
+    image = models.ImageField(
+        'Изображение меню',
+        upload_to='pics',
+        null=True,
+        blank=True
+    )
     dishes = models.ManyToManyField(Dish, verbose_name='Блюда')
 
 
 class Restaurant(models.Model):
-    RESTAURANT_TYPE = [
-        ('FF', 'Фаст Фуд'),
-        ('CF', 'Кафе'),
-        ('CFN', 'Кофейня'),
-    ]
-
-    title = models.CharField('Название ресторана', max_length=255)
-    address = models.CharField('Адресс', max_length=255)
+    """Модель ресторана."""
+    class TypeOfShop(models.TextChoices):
+        FASTFOOD = "FF",
+        CAFE = "CA"
+        COFFESHOP = "CS"
+    name = models.CharField('Название', max_length=255)
+    address = models.CharField('Адрес', max_length=255)
     description = models.TextField('Описание')
-    pic = models.ImageField('Изображение ресторана', upload_to='pics')
-    from_work = models.CharField('Начало работы', max_length=255)
-    to_work = models.CharField('Конец работы', max_length=255)
-    type_of_restaurant = models.CharField('Тип ресторана', choices=RESTAURANT_TYPE, max_length=10)
-    tags = models.ForeignKey(
-        Tag, on_delete=models.SET_NULL, null=True, verbose_name='Теги'
+    image = models.ImageField('Изображение ресторана', upload_to='pics')
+    begin_time = models.CharField('Начало работы', max_length=255)
+    end_time = models.CharField('Конец работы', max_length=255)
+    menu = models.ForeignKey(
+        Menu,
+        verbose_name='Меню',
+        on_delete=models.CASCADE
     )
-    is_cancellation_available = models.BooleanField(
-        default=False, verbose_name='Можно ли отменить заказ'
+    owner = models.ForeignKey('RestaurantOwner')
+    admin = models.ForeignKey('RestaurantAdmin')
+    type_of_shop = models.CharField(
+        max_length=2,
+        choices=TypeOfShop.choices,
+        default=TypeOfShop.FF,
     )
-    time_to_cancel = models.TimeField('Время для отмены заказа', null=True)
-    menu = models.ForeignKey(Menu, verbose_name='Меню', on_delete=models.CASCADE)
-    rating = models.PositiveIntegerField('Рейтинг')
 
     def __str__(self):
-        return self.title
+        return self.name
