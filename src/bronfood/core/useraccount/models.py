@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from .validators import CustomUnicodeUsernameValidator
+from .validators import (UsernameValidator,
+                         KazakhstanPhoneNumberValidator)
 
 
 class UserAccountManager(BaseUserManager):
@@ -43,8 +44,10 @@ class UserAccount(AbstractBaseUser):
     role = models.CharField(max_length=16, choices=Role.choices,
                             default=Role.CLIENT)
     username = models.CharField(max_length=200,
-                                validators=[CustomUnicodeUsernameValidator])
-    phone = models.CharField(max_length=18, unique=True)
+                                validators=[UsernameValidator])
+    phone = models.CharField(max_length=18,
+                             unique=True,
+                             validators=[KazakhstanPhoneNumberValidator])
     status = models.SmallIntegerField(choices=Status.choices,
                                       default=Status.UNCONFIRMED)
     USERNAME_FIELD = "phone"
@@ -65,3 +68,11 @@ class UserAccount(AbstractBaseUser):
         if not self.role or self.role is None:
             self.role = UserAccount.Role.CLIENT
         return super().save(*args, **kwargs)
+
+    @property
+    def is_staff(self):
+        return self.role == UserAccount.Role.ADMIN
+
+    @property
+    def is_superuser(self):
+        return self.role == UserAccount.Role.ADMIN
