@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 
-from .models import RestaurantOwner
+from bronfood.core.restaurant_owner.models import RestaurantOwner
 from .serializers import RestaurantOwnerSerializer
 
 

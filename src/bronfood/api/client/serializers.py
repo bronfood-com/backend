@@ -1,5 +1,5 @@
-from .models import RestaurantOwner
 from rest_framework import serializers
+from bronfood.core.restaurant_owner.models import RestaurantOwner
 
 
 class RestaurantOwnerSerializer(serializers.ModelSerializer):
