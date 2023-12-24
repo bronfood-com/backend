@@ -5,8 +5,18 @@ from bronfood.core.useraccount.validators import (
     KazakhstanPhoneNumberValidator,
     PasswordValidator,
     UsernameValidator,
-    ConfirmationValidator
+    ConfirmationValidator,
+    FullnameValidator
 )
+
+
+class ClientRequestPasswordResetSerializer(serializers.Serializer):
+    """
+    Запрос на смену пароля.
+    """
+    phone = serializers.CharField()
+    #     validators=[KazakhstanPhoneNumberValidator()]
+    # )
 
 
 class ClientPasswordResetSerializer(serializers.Serializer):
@@ -35,10 +45,13 @@ class ClientSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(
         validators=[KazakhstanPhoneNumberValidator()]
     )
+    fullname = serializers.CharField(
+        validators=[FullnameValidator()]
+    )
 
     class Meta:
         model = Client
-        fields = ['password', 'phone', ]
+        fields = ['password', 'phone', 'fullname']
 
     def create(self, validated_data):
         password = validated_data.pop('password', None)
@@ -114,6 +127,7 @@ class ClientResponseSerializer(serializers.Serializer):
     Предоставление данных о клиенте.
     """
     phone = serializers.CharField()
+    fullname = serializers.CharField()
 
 
 class ConfirmationSerializer(serializers.Serializer):

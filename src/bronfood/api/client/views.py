@@ -15,6 +15,7 @@ from bronfood.api.client.serializers import (
     ClientPasswordResetSerializer,
     ClientResponseSerializer,
     ConfirmationSerializer,
+    ClientRequestPasswordResetSerializer
 )
 from bronfood.core.client.models import Client, UserAccount
 
@@ -31,14 +32,17 @@ class ClientProfileView(BaseAPIView):
         tags=['client'],
         operation_summary='Profile',
         responses={
-            status.HTTP_200_OK: ClientSerializer(),
+            status.HTTP_200_OK: ClientResponseSerializer(),
             status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
             status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401]
         }
     )
     def get(self, request):
         # Получение информации о клиенте по идентификатору пользователя
-        serializer = ClientResponseSerializer(data={'phone': self.current_client.phone})
+        serializer = ClientResponseSerializer(
+            data={'phone': self.current_client.phone,
+                  'fullname': self.current_client.fullname}
+        )
         serializer.is_valid()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -115,6 +119,25 @@ class ClientPasswordResetView(BaseAPIView):
     """
     Восстановление пароля клиента на основе телефона и нового пароля.
     """
+    @swagger_auto_schema(
+        tags=['client'],
+        operation_summary='Request reset password',
+        # request_body=ClientSerializer(),
+        # TODO тут падает свагер
+        responses={
+            status.HTTP_200_OK: None,
+            status.HTTP_404_NOT_FOUND: ERR_MESSAGE[404],
+        }
+    )
+    def get(self, request):
+        # pass
+        serializer = ClientRequestPasswordResetSerializer(
+            data=request.data
+        )
+        serializer.is_valid(raise_exception=True)
+        phone = serializer.validated_data.get('phone')
+        client = get_object_or_404(Client, phone=phone)
+        return Response(status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         tags=['client'],
@@ -160,6 +183,7 @@ class ClientRegistrationView(BaseAPIView):
         # Авторизация клиента
         phone = client_serializer.validated_data.get('phone')
         password = client_serializer.validated_data.get('password')
+
         user = authenticate(
             request=request,
             phone=phone,
@@ -167,9 +191,13 @@ class ClientRegistrationView(BaseAPIView):
         )
         login(request, user)
         # Используем сериализатор для возврата данных
-        response_serializer = ClientResponseSerializer(data={'phone': phone})
+        fullname = client_serializer.validated_data.get('fullname')
+        response_serializer = ClientResponseSerializer(
+            data={'phone': phone,
+                  'fullname': fullname})
         response_serializer.is_valid(raise_exception=True)
-        return Response(response_serializer.validated_data, status=status.HTTP_200_OK)
+        return Response(response_serializer.validated_data,
+                        status=status.HTTP_200_OK)
 
 
 class ClientConfirmationView(BaseAPIView):
