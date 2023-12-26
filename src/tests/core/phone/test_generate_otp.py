@@ -13,7 +13,9 @@ class GenerateOTPTest(TestCase):
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls.phone_number = '76665554433'
-        cls.user = User.objects.create_user(username='auth')
+        cls.user = User.objects.create_user(
+            username='auth', phone=cls.phone_number
+        )
         cls.otp = PhoneSmsOtpVerification.objects.create(
             message=SmsMessage.REGISTRATION,
             user=cls.user,
