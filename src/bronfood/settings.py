@@ -147,7 +147,9 @@ VENDORS = {
     'SMS_BACKENDS': {
         'KAZINFOTECH': {
                 'USERNAME': os.getenv('KAZINFOTECH_USERNAME'),
-                'PASSWORD': os.getenv('KAZINFOTECH_PASSWORD')
+                'PASSWORD': os.getenv('KAZINFOTECH_PASSWORD'),
+                'URL': 'https://kazinfoteh.org:9507/api?',
+                'ORIGINATOR': 'INFO_KAZ'
             }
         }
 }

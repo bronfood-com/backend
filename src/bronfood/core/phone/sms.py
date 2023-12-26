@@ -10,8 +10,8 @@ class SMSMessage:
     Usage:
         >>> SMSMessage('76665554433', 'Your code: 0001').send()
     """
-    URL = 'https://kazinfoteh.org:9507/api?'
-    ORIGINATOR = 'INFO_KAZ'
+    URL = settings.VENDORS.get('URL')
+    ORIGINATOR = settings.VENDORS.get('ORIGINATOR')
     USERNAME = settings.VENDORS.get('USERNAME')
     PASSWORD = settings.VENDORS.get('PASSWORD')
 
