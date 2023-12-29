@@ -25,7 +25,7 @@ from drf_yasg import openapi
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('healthcheck/', healthcheck),
-    path('api/v1/', include('bronfood.core.payment_requisites.urls'))
+    path('api/v1/', include('bronfood.core.payment_requisites.urls')),
 ]
 
 
