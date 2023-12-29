@@ -63,7 +63,7 @@ class ClientSerializer(serializers.ModelSerializer):
         return user
 
 
-class ClientUpdateSerializer(serializers.ModelSerializer):
+class ClientUpdateSerialize_OLD(serializers.ModelSerializer):
     """
     Сериализатор для обновления объекта клиента.
     """
@@ -88,6 +88,40 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password', None)
         if password:
             instance.set_password(password)
+        return super().update(instance, validated_data)
+
+
+class ClientUpdateSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для обновления объекта клиента.
+    """
+    new_password = serializers.CharField(
+        required=False,
+        validators=[PasswordValidator()]
+    )
+    new_password_confirm = serializers.CharField(
+        required=False,
+        validators=[PasswordValidator()]
+    )
+    fullname = serializers.CharField(
+        required=False,
+        validators=[FullnameValidator()]
+    )
+
+    class Meta:
+        model = Client
+        fields = ['new_password', 'new_password_confirm', 'fullname']
+
+    def validate(self, data):
+        if data['new_password'] != data['new_password_confirm']:
+            raise serializers.ValidationError(
+                'Введенные пароли не совпадают')
+        return data
+
+    def update(self, instance, validated_data):
+        new_password = validated_data.pop('new_password', None)
+        if new_password:
+            instance.set_password(new_password)
         return super().update(instance, validated_data)
 
 

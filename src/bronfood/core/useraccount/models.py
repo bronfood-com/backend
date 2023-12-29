@@ -43,6 +43,7 @@ class UserAccount(AbstractBaseUser):
 
     role = models.CharField(max_length=16, choices=Role.choices,
                             default=Role.CLIENT)
+    # TODO необходимо добавить валидатор для username
     username = models.CharField(max_length=40)
     fullname = models.CharField(max_length=40,
                                 validators=[FullnameValidator])

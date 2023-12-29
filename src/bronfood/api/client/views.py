@@ -38,7 +38,7 @@ class ClientProfileView(BaseAPIView):
         }
     )
     def get(self, request):
-        # Получение информации о клиенте по идентификатору пользователя
+        # Используется для предоставленя сведений о клиенте в профиле.
         serializer = ClientResponseSerializer(
             data={'phone': self.current_client.phone,
                   'fullname': self.current_client.fullname}
@@ -49,21 +49,33 @@ class ClientProfileView(BaseAPIView):
     @swagger_auto_schema(
         tags=['client'],
         operation_summary='Update profile',
-        request_body=ClientSerializer(),
+        request_body=ClientUpdateSerializer(),
         responses={
-            status.HTTP_200_OK: ClientSerializer(),
+            status.HTTP_200_OK: ClientResponseSerializer(),
             status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
         }
     )
+    # NOTE: в фигме для изменения данных в профиле клиента предусмотрено
+    # подтверждение с СМС, что выглядит избыточным.
+    # Изменения вносятся авторизованным клиентом.
+    # Изменяются поля (пароль и Имя Фамилия).
+    # Нет никакой ниобходимости подтверждать номер телефона.
     def patch(self, request):
-        # Получение объекта клиента по идентификатору пользователя
-        # Указание partial=True для частичного обновления
+        # Используется для обновления сведений о профиле клиента.
         serializer = ClientUpdateSerializer(self.current_client,
                                             data=request.data,
                                             partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            # Повторная аутентификация пользователя после сохранения изменений
+            login(request, self.current_client)
+            responce_serializer = ClientResponseSerializer(
+                data={'phone': self.current_client.phone,
+                      'fullname': self.current_client.fullname}
+            )
+            responce_serializer.is_valid()
+            return Response(responce_serializer.data,
+                            status=status.HTTP_200_OK)
         return Response(ERR_MESSAGE[400], status=status.HTTP_400_BAD_REQUEST)
 
 
