@@ -1,6 +1,6 @@
 from django.urls import path
 
-from bronfood.core.payment_requisites.views import PaymentRequisitesView
+from bronfood.api.payment_requisites.views import PaymentRequisitesView
 
 app_name = 'requisites'
 urlpatterns = [
