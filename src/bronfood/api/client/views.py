@@ -6,7 +6,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login, logout
 
-from bronfood.api.constants import ERR_MESSAGE
+from bronfood.api.constants import HTTP_STATUS_MSG
 from bronfood.api.views import BaseAPIView
 from bronfood.api.client.serializers import (
     ClientSerializer,
@@ -15,7 +15,8 @@ from bronfood.api.client.serializers import (
     ClientPasswordResetSerializer,
     ClientResponseSerializer,
     ConfirmationSerializer,
-    ClientRequestPasswordResetSerializer
+    ClientChangePasswordRequestSerializer,
+    ClientChangePasswordConfirmationSerializer,
 )
 from bronfood.core.client.models import Client, UserAccount
 
@@ -33,8 +34,8 @@ class ClientProfileView(BaseAPIView):
         operation_summary='Profile',
         responses={
             status.HTTP_200_OK: ClientResponseSerializer(),
-            status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
-            status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401]
+            status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
+            status.HTTP_401_UNAUTHORIZED: HTTP_STATUS_MSG[401]
         }
     )
     def get(self, request):
@@ -52,7 +53,7 @@ class ClientProfileView(BaseAPIView):
         request_body=ClientUpdateSerializer(),
         responses={
             status.HTTP_200_OK: ClientResponseSerializer(),
-            status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
+            status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
         }
     )
     # NOTE: в фигме для изменения данных в профиле клиента предусмотрено
@@ -76,7 +77,7 @@ class ClientProfileView(BaseAPIView):
             responce_serializer.is_valid()
             return Response(responce_serializer.data,
                             status=status.HTTP_200_OK)
-        return Response(ERR_MESSAGE[400], status=status.HTTP_400_BAD_REQUEST)
+        return Response(HTTP_STATUS_MSG[400], status=status.HTTP_400_BAD_REQUEST)
 
 
 class ClientLoginView(BaseAPIView):
@@ -88,8 +89,8 @@ class ClientLoginView(BaseAPIView):
         request_body=ClientLoginSerializer(),
         responses={
             status.HTTP_200_OK: ClientResponseSerializer(),
-            status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
-            status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401],
+            status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
+            status.HTTP_401_UNAUTHORIZED: HTTP_STATUS_MSG[401],
         }
     )
     def post(self, request):
@@ -103,7 +104,7 @@ class ClientLoginView(BaseAPIView):
                             password=password)
 
         if not user:
-            return Response(ERR_MESSAGE[401],
+            return Response(HTTP_STATUS_MSG[401],
                             status=status.HTTP_401_UNAUTHORIZED)
 
         login(request, user)
@@ -127,29 +128,87 @@ class ClientLogoutView(BaseAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class ClientPasswordResetView(BaseAPIView):
+class ClientChangePasswordRequestView(BaseAPIView):
     """
-    Восстановление пароля клиента на основе телефона и нового пароля.
+    Восстановление пароля клиента.
+    ЭТАП 1. Предоставляется телефон.
+    Оператору отправляется запрос на получение СМС.
+    Полученный СМС сохраняется в БД.
+    На телефон клиента отправляется СМС для подтверждения изменения пароля.
     """
+
     @swagger_auto_schema(
         tags=['client'],
-        operation_summary='Request reset password',
-        # request_body=ClientSerializer(),
-        # TODO тут падает свагер
+        operation_summary='Request for change password',
+        request_body=ClientChangePasswordRequestSerializer(),
         responses={
-            status.HTTP_200_OK: None,
-            status.HTTP_404_NOT_FOUND: ERR_MESSAGE[404],
+            status.HTTP_200_OK: ClientChangePasswordRequestSerializer(),
+            status.HTTP_404_NOT_FOUND: HTTP_STATUS_MSG[404],
         }
     )
-    def get(self, request):
-        # pass
-        serializer = ClientRequestPasswordResetSerializer(
+    def post(self, request):
+        serializer = ClientChangePasswordRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        phone = serializer.validated_data.get('phone')
+        client = get_object_or_404(Client, phone=phone) # noqa
+        # TODO запрос на получение клиентом СМС.
+        # TODO сохранение в БД СМС для клиента.
+        # TODO если выше прошло удачно возвращаем статус 200.
+        return Response(serializer.validated_data,
+                        status=status.HTTP_200_OK)
+
+
+class ClientChangePasswordConfirmationView(BaseAPIView):
+    """
+    Восстановление пароля клиента.
+    ЭТАП 2. Передается телефон и СМС.
+    Полученный от клиента СМС сравниевает с тем, который в БД.
+    Если ок, то клиент логинится.
+    """
+    # NOTE временная переменная до подключения получения СМС из БД
+    VALID_CODE = "0000"
+
+    @swagger_auto_schema(
+        tags=['client'],
+        operation_summary='Confirmation by sms for change password',
+        request_body=ClientChangePasswordConfirmationSerializer(),
+        responses={
+            status.HTTP_200_OK: HTTP_STATUS_MSG[200],
+            status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
+        }
+    )
+    def post(self, request):
+        serializer = ClientChangePasswordConfirmationSerializer(
             data=request.data
         )
         serializer.is_valid(raise_exception=True)
         phone = serializer.validated_data.get('phone')
-        client = get_object_or_404(Client, phone=phone)
-        return Response(status=status.HTTP_200_OK)
+        client = get_object_or_404(Client, phone=phone) # noqa
+        confirmation_code = serializer.validated_data.get(  # noqa
+            'confirmation_code'
+        )
+        try:
+            # TODO получаем из БД СМС клиента
+            # TODO проверяем что СМС из БД соответствует confirmation_code
+            # NOTE временный код где проверяем, что confirmation_code
+            # совпадает с VALID_CODE
+            if confirmation_code != self.VALID_CODE:
+                # Если код неверный, вызываем исключение ValidationError
+                raise ValidationError('Invalid confirmation code')
+                # Если код верный, логируем клиента
+            login(request, client)
+            return Response(status=status.HTTP_200_OK)
+
+        except Exception as e:  # noqa
+            # какой-то Exception - выбрасывает клиент по валидации смс,
+            # если оно неверпное, нужно обработать и сделать Validation error
+            raise ValidationError('Invalid confirmation code')
+
+
+class ClientPasswordResetView(BaseAPIView):
+    """
+    Восстановление пароля клиента на основе телефона и нового пароля.
+    """
 
     @swagger_auto_schema(
         tags=['client'],
@@ -157,7 +216,7 @@ class ClientPasswordResetView(BaseAPIView):
         request_body=ClientPasswordResetSerializer(),
         responses={
             status.HTTP_200_OK: None,
-            status.HTTP_404_NOT_FOUND: ERR_MESSAGE[404],
+            status.HTTP_404_NOT_FOUND: HTTP_STATUS_MSG[404],
         }
     )
     def post(self, request):
@@ -183,7 +242,7 @@ class ClientRegistrationView(BaseAPIView):
         request_body=ClientSerializer(),
         responses={
             status.HTTP_200_OK: ClientResponseSerializer(),
-            status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
+            status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
         }
     )
     def post(self, request):
@@ -226,8 +285,8 @@ class ClientConfirmationView(BaseAPIView):
         request_body=ConfirmationSerializer(),
         responses={
             status.HTTP_200_OK: None,
-            status.HTTP_400_BAD_REQUEST: ERR_MESSAGE[400],
-            status.HTTP_401_UNAUTHORIZED: ERR_MESSAGE[401],
+            status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
+            status.HTTP_401_UNAUTHORIZED: HTTP_STATUS_MSG[401],
         }
     )
     def post(self, request):

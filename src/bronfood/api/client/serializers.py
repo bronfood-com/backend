@@ -10,13 +10,24 @@ from bronfood.core.useraccount.validators import (
 )
 
 
-class ClientRequestPasswordResetSerializer(serializers.Serializer):
+class ClientChangePasswordRequestSerializer(serializers.Serializer):
     """
     Запрос на смену пароля.
     """
+    phone = serializers.CharField(
+        validators=[KazakhstanPhoneNumberValidator()]
+    )
+
+
+class ClientChangePasswordConfirmationSerializer(serializers.Serializer):
+    """
+    Подтверждение по смс для смены пароля.
+    """
     phone = serializers.CharField()
-    #     validators=[KazakhstanPhoneNumberValidator()]
-    # )
+    confirmation_code = serializers.CharField(
+        validators=[ConfirmationValidator()],
+        write_only=True,
+    )
 
 
 class ClientPasswordResetSerializer(serializers.Serializer):
