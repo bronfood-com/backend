@@ -11,16 +11,6 @@ class FullnameValidator(validators.RegexValidator):
     flags = 0
 
 
-class UsernameValidator(validators.RegexValidator):
-    # regex = r'^[A-Za-z!@#$%^&*()-_+=<>?]{2,40}$'
-    regex = r"^[А-Яа-яЁёA-Za-z]+(?:[\s][А-Яа-яЁёA-Za-z]+)*$"
-    message = (
-        "Enter a valid username. This value may contain only letters "
-        "from English and Russian alphabets with only one space between words."
-    )
-    flags = 0
-
-
 class KazakhstanPhoneNumberValidator(validators.RegexValidator):
     regex = r'^7\d{9}$'
     message = (

@@ -4,7 +4,6 @@ from django.contrib.auth import authenticate
 from bronfood.core.useraccount.validators import (
     KazakhstanPhoneNumberValidator,
     PasswordValidator,
-    UsernameValidator,
     ConfirmationValidator,
     FullnameValidator
 )
@@ -27,20 +26,6 @@ class ClientChangePasswordConfirmationSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField(
         validators=[ConfirmationValidator()],
         write_only=True,
-    )
-
-
-class ClientPasswordResetSerializer(serializers.Serializer):
-    """
-    Сериализатор для восстановления пароля клиента.
-    Осуществляется на основе телефона и нового пароля.
-    """
-    phone = serializers.CharField(
-        validators=[KazakhstanPhoneNumberValidator()]
-    )
-    new_password = serializers.CharField(
-        write_only=True,
-        validators=[PasswordValidator()]
     )
 
 
@@ -74,31 +59,33 @@ class ClientSerializer(serializers.ModelSerializer):
         return user
 
 
-class ClientUpdateSerialize_OLD(serializers.ModelSerializer):
+class ClientChangePasswordSerializer(serializers.ModelSerializer):
     """
-    Сериализатор для обновления объекта клиента.
+    Сериализатор для обновления пароля клиента.
     """
-    password = serializers.CharField(
+    new_password = serializers.CharField(
         required=False,
         validators=[PasswordValidator()]
     )
-    phone = serializers.IntegerField(
+    new_password_confirm = serializers.CharField(
         required=False,
-        validators=[KazakhstanPhoneNumberValidator()]
-    )
-    username = serializers.CharField(
-        required=False,
-        validators=[UsernameValidator()]
+        validators=[PasswordValidator()]
     )
 
     class Meta:
         model = Client
-        fields = ['password', 'phone', 'username']
+        fields = ['new_password', 'new_password_confirm']
+
+    def validate(self, data):
+        if data['new_password'] != data['new_password_confirm']:
+            raise serializers.ValidationError(
+                'Введенные пароли не совпадают')
+        return data
 
     def update(self, instance, validated_data):
-        password = validated_data.pop('password', None)
-        if password:
-            instance.set_password(password)
+        new_password = validated_data.pop('new_password', None)
+        if new_password:
+            instance.set_password(new_password)
         return super().update(instance, validated_data)
 
 
