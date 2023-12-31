@@ -317,9 +317,13 @@ class ClientConfirmationView(BaseAPIView):
             # какой-то Exception - выбрасывает клиент по валидации смс,
             # если оно неверпное, нужно обработать и сделать Validation error
             raise ValidationError('Invalid confirmation code')
-        # BUG: ЭТОТ фрагмент не работает как нужно
+
         else:
-            self.current_client.status = UserAccount.Status.CONFIRMED
-            self.current_client.save(update_fields=['status', ])
+            client = self.request.user
+            client.status = UserAccount.Status.CONFIRMED
+            client.status.save(update_fields=['status', ])
+            # BUG: Почему фрагмент ниже не работает как нужно
+            # self.current_client.status = UserAccount.Status.CONFIRMED
+            # self.current_client.save(update_fields=['status', ])
 
         return Response(status=status.HTTP_200_OK)
