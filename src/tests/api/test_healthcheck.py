@@ -8,3 +8,4 @@ class StaticURLTests(TestCase):
         guest_client = Client()
         response = guest_client.get('/healthcheck/')
         self.assertEqual(response.status_code, 200)
+        print(f'ОТВЕТ {response.status_code}')
