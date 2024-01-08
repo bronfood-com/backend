@@ -97,7 +97,6 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT')
     }
 }
-
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -146,4 +145,12 @@ AUTH_USER_MODEL = 'useraccount.UserAccount'
 SMS_SETTINGS = {
     'BACKEND': 'bronfood.core.phone.sms.backends.dummy.SmsBackend' if ENV_NAME == 'local'
     else os.getenv('BACKEND')
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json'
 }
