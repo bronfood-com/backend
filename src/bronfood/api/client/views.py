@@ -107,9 +107,14 @@ class ClientLoginView(BaseAPIView):
                             status=status.HTTP_401_UNAUTHORIZED)
 
         login(request, user)
-        response_serializer = ClientResponseSerializer(data={'phone': phone})
+        fullname = user.fullname
+        response_serializer = ClientResponseSerializer(
+            data={'phone': phone,
+                  'fullname': fullname}
+        )
         response_serializer.is_valid(raise_exception=True)
-        return Response(response_serializer)
+        return Response(response_serializer.data,
+                        status=status.HTTP_200_OK)
 
 
 class ClientLogoutView(BaseAPIView):
@@ -205,11 +210,11 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
 
 
 class ClientChangePasswordView(BaseAPIView):
-    permission_classes = (IsAuthenticated,)
     """
     Восстановление пароля клиента.
     ЭТАП 3. Залогиненым изменяется пароль на новый.
     """
+    permission_classes = (IsAuthenticated,)
 
     @swagger_auto_schema(
         tags=['client'],
@@ -321,9 +326,9 @@ class ClientConfirmationView(BaseAPIView):
         else:
             client = self.request.user
             client.status = UserAccount.Status.CONFIRMED
-            client.status.save(update_fields=['status', ])
+            client.save(update_fields=['status', ])
+            # client.status.save(update_fields=['status', ])
             # BUG: Почему фрагмент ниже не работает как нужно
             # self.current_client.status = UserAccount.Status.CONFIRMED
             # self.current_client.save(update_fields=['status', ])
-
         return Response(status=status.HTTP_200_OK)
