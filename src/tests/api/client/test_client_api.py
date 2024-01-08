@@ -149,24 +149,6 @@ class ClientApiTests(APITestCase):
         # Проверяем, что после разлогирования сессия отсутствует
         self.assertNotIn('_auth_user_id', self.guest.session)
 
-    def test_change_password_complete(self):
-        """
-        Ensure authorized client finalize change password procedure,
-        set new password and loggin.
-        """
-        url = reverse('client:change_password_complete')
-        request_data = {"new_password": "new_password",
-                        "new_password_confirm": "new_password"}
-        response_data = {"phone": "7000000000",
-                         "fullname": "New client"}
-        response = self.authorized_client.patch(url,
-                                                data=request_data,
-                                                format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, response_data)
-        # после отправки кода подтверждения установлена сессия
-        self.assertIn('_auth_user_id', self.authorized_client.session)
-
     def test_client_login(self):
         """
         Ensure loggin client.
@@ -174,7 +156,7 @@ class ClientApiTests(APITestCase):
         url = reverse('client:signin')
         # Проверяем, что до регистрации отсутствует сессия
         self.assertNotIn('_auth_user_id', self.guest.session)
-        # обращение за авторизацией клиента
+        # обращение клиента за авторизацией
         response = self.guest.post(url,
                                    data={'phone': '7000000002',
                                          'password': 'password'},
@@ -188,8 +170,8 @@ class ClientApiTests(APITestCase):
         Ensure unauthorized client can send request to change password.
         """
         url = reverse('client:change_password_request')
-        # обращение авторизованного клиента
         data = {'phone': '7000000002'}
+        # обращение неавторизованного клиента
         response = self.guest.post(url,
                                    data=data,
                                    format='json')
@@ -211,3 +193,21 @@ class ClientApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # после отправки кода подтверждения установлена сессия
         self.assertIn('_auth_user_id', self.guest.session)
+
+    def test_change_password_complete(self):
+        """
+        Ensure authorized client finalize change password procedure,
+        set new password and loggin.
+        """
+        url = reverse('client:change_password_complete')
+        request_data = {"new_password": "new_password",
+                        "new_password_confirm": "new_password"}
+        response_data = {"phone": "7000000000",
+                         "fullname": "New client"}
+        response = self.authorized_client.patch(url,
+                                                data=request_data,
+                                                format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, response_data)
+        # после отправки кода подтверждения установлена сессия
+        self.assertIn('_auth_user_id', self.authorized_client.session)
