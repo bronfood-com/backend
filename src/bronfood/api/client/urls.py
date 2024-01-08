@@ -24,7 +24,7 @@ urlpatterns = [
          name='change_password_confirmation'),
     path('change_password/',
          ClientChangePasswordView.as_view(),
-         name='change_password'),
+         name='change_password_complete'),
     path('confirmation/',
          ClientConfirmationView.as_view(),
          name='confirmation')

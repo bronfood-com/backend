@@ -95,15 +95,15 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
     """
     new_password = serializers.CharField(
         required=False,
-        validators=[PasswordValidator()]
+        # validators=[PasswordValidator()]
     )
     new_password_confirm = serializers.CharField(
         required=False,
-        validators=[PasswordValidator()]
+        # validators=[PasswordValidator()]
     )
     fullname = serializers.CharField(
         required=False,
-        validators=[FullnameValidator()]
+        # validators=[FullnameValidator()]
     )
 
     class Meta:
