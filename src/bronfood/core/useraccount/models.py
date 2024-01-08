@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from .validators import (UsernameValidator,
+from .validators import (FullnameValidator,
                          KazakhstanPhoneNumberValidator)
 
 
@@ -43,8 +43,10 @@ class UserAccount(AbstractBaseUser):
 
     role = models.CharField(max_length=16, choices=Role.choices,
                             default=Role.CLIENT)
-    username = models.CharField(max_length=200,
-                                validators=[UsernameValidator])
+    # TODO необходимо добавить валидатор для username
+    username = models.CharField(max_length=40)
+    fullname = models.CharField(max_length=40,
+                                validators=[FullnameValidator])
     phone = models.CharField(max_length=18,
                              unique=True,
                              validators=[KazakhstanPhoneNumberValidator])

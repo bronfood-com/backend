@@ -1,11 +1,12 @@
 from django.core import validators
 
 
-class UsernameValidator(validators.RegexValidator):
-    regex = r"^[А-Яа-яЁёA-Za-z]+(?:[\s][А-Яа-яЁёA-Za-z]+)*$"
+class FullnameValidator(validators.RegexValidator):
+    regex = r'^[А-Яа-яЁёA-Za-z\s]{2,40}$'
     message = (
-        "Enter a valid username. This value may contain only letters "
-        "from English and Russian alphabets with only one space between words."
+        "Enter a valid full name. This value may contain only letters "
+        "from English and Russian alphabets and spaces. "
+        "It must be between 2 and 40 characters."
     )
     flags = 0
 
