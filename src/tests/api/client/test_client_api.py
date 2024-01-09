@@ -128,14 +128,15 @@ class ClientApiTests(APITestCase):
         """
         url = reverse('client:confirmation')
         # обращение авторизованного клиента
-        status_before = self.client.status
-        response = self.authorized_client.patch(
+        client_status_before = self.client.status
+        response = self.authorized_client.post(
             url, self.confirmation_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        status_after = self.client.status
-        # BUG СТАТУС НЕ МЕНЯЕТСЯ!!!
-        self.assertNotEqual(status_before, status_after)
-        self.assertEqual(self.client.status, UserAccount.Status.CONFIRMED)
+        # получаю клиента из бд для проверки изменения его статуса
+        client_in_db = Client.objects.get(phone='7000000000')
+        client_status_after = client_in_db.status
+        self.assertNotEqual(client_status_before, client_status_after)
+        self.assertEqual(client_status_after, UserAccount.Status.CONFIRMED)
 
     def test_client_logout(self):
         """
