@@ -327,8 +327,7 @@ class ClientConfirmationView(BaseAPIView):
             client = self.request.user
             client.status = UserAccount.Status.CONFIRMED
             client.save(update_fields=['status', ])
-            # client.status.save(update_fields=['status', ])
-            # BUG: Почему фрагмент ниже не работает как нужно
+            # NOTE: Почему то фрагмент ниже не позволяет выполнить изменение
             # self.current_client.status = UserAccount.Status.CONFIRMED
             # self.current_client.save(update_fields=['status', ])
         return Response(status=status.HTTP_200_OK)
