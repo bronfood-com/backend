@@ -5,7 +5,7 @@ class RestaurantOwnerManager(UserAccountManager):
 
     def get_queryset(self, *args, **kwargs):
         queryset = super().get_queryset(*args, **kwargs)
-        # queryset = queryset.filter(type=UserAccount.Role.OWNER)
+        queryset = queryset.filter(role=UserAccount.Role.OWNER)
         return queryset
 
 
