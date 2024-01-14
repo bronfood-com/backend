@@ -1,12 +1,10 @@
-from rest_framework import serializers
-from bronfood.core.client.models import Client
 from django.contrib.auth import authenticate
+from rest_framework import serializers
+
+from bronfood.core.client.models import Client
 from bronfood.core.useraccount.validators import (
-    KazakhstanPhoneNumberValidator,
-    PasswordValidator,
-    ConfirmationValidator,
-    FullnameValidator
-)
+    ConfirmationValidator, FullnameValidator, KazakhstanPhoneNumberValidator,
+    PasswordValidator)
 
 
 class ClientChangePasswordRequestSerializer(serializers.Serializer):
@@ -95,15 +93,15 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
     """
     new_password = serializers.CharField(
         required=False,
-        # validators=[PasswordValidator()]
+        validators=[PasswordValidator()]
     )
     new_password_confirm = serializers.CharField(
         required=False,
-        # validators=[PasswordValidator()]
+        validators=[PasswordValidator()]
     )
     fullname = serializers.CharField(
         required=False,
-        # validators=[FullnameValidator()]
+        validators=[FullnameValidator()]
     )
 
     class Meta:

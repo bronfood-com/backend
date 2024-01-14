@@ -1,15 +1,10 @@
 from django.urls import path, re_path
-from .views import (ClientRegistrationView,
-                    ClientProfileView,
-                    ClientChangePasswordView,
-                    ClientConfirmationView,
-                    ClientChangePasswordRequestView,
-                    ClientChangePasswordConfirmationView,
-                    ClientRegistrationView,
-                    CustomTokenCreateView
-                    )
 from djoser.views import TokenDestroyView
 
+from .views import (ClientChangePasswordConfirmationView,
+                    ClientChangePasswordRequestView, ClientChangePasswordView,
+                    ClientConfirmationView, ClientProfileView,
+                    ClientRegistrationView, CustomTokenCreateView)
 
 app_name = 'client'
 
