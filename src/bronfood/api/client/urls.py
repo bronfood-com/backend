@@ -1,20 +1,19 @@
-from django.urls import path
+from django.urls import path, re_path
 from .views import (ClientRegistrationView,
                     ClientProfileView,
-                    ClientLoginView,
-                    ClientLogoutView,
                     ClientChangePasswordView,
                     ClientConfirmationView,
                     ClientChangePasswordRequestView,
-                    ClientChangePasswordConfirmationView)
+                    ClientChangePasswordConfirmationView,
+                    ClientRegistrationView,
+                    CustomTokenCreateView
+                    )
+from djoser.views import TokenDestroyView
 
 
 app_name = 'client'
 
 urlpatterns = [
-    path('signup/', ClientRegistrationView.as_view(), name='signup'),
-    path('signin/', ClientLoginView.as_view(), name='signin'),
-    path('signout/', ClientLogoutView.as_view(), name='signout'),
     path('profile/', ClientProfileView.as_view(), name='profile'),
     path('change_password/request/',
          ClientChangePasswordRequestView.as_view(),
@@ -27,5 +26,16 @@ urlpatterns = [
          name='change_password_complete'),
     path('confirmation/',
          ClientConfirmationView.as_view(),
-         name='confirmation')
+         name='confirmation'),
+    path('signup/',
+         ClientRegistrationView.as_view(),
+         name='signup')
+
 ]
+
+# Token
+urlpatterns += [
+    re_path(r"^signout/?$", TokenDestroyView.as_view(), name="signout"),
+    re_path(r"^signin/?$", CustomTokenCreateView.as_view(), name="signin"),
+]
+    

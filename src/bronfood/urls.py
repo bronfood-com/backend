@@ -26,7 +26,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('healthcheck/', healthcheck),
     path('client/', include('bronfood.api.client.urls', namespace='client')),
+    # path(r'^auth/', include('djoser.urls')),
+    # re_path(r'^auth/', include('djoser.urls.authtoken')),
 ]
+
 
 
 schema_view = get_schema_view(
