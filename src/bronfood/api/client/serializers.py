@@ -170,3 +170,11 @@ class ConfirmationSerializer(serializers.Serializer):
         validators=[ConfirmationValidator()],
         write_only=True,
     )
+
+class ClientLoginSerializer(serializers.Serializer):
+    """
+    Предоставление данных после регистрации клиента.
+    """
+    phone = serializers.CharField()
+    fullname = serializers.CharField()
+    auth_token = serializers.CharField()
