@@ -14,10 +14,15 @@ from bronfood.api.client.serializers import (
     ClientChangePasswordConfirmationSerializer,
     ClientChangePasswordRequestSerializer, ClientChangePasswordSerializer,
     ClientLoginSerializer, ClientResponseSerializer, ClientSerializer,
-    ClientUpdateSerializer, ConfirmationSerializer)
+    ClientUpdateSerializer, ConfirmationSerializer,
+    ClientGetDataRegistrationSerializer,
+    ClientDataToProfileSerializer)
 from bronfood.api.constants import HTTP_STATUS_MSG
 from bronfood.api.views import BaseAPIView
 from bronfood.core.client.models import Client, UserAccount
+from django.views.generic.base import RedirectView
+from django.urls import reverse
+import requests
 
 
 class ClientProfileView(BaseAPIView):
@@ -54,12 +59,14 @@ class ClientProfileView(BaseAPIView):
             status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
         }
     )
-    # NOTE: в фигме предусмотрено ввод кода подтверждения до внесения изменений
     def patch(self, request):
         serializer = ClientUpdateSerializer(self.current_client,
                                             data=request.data,
                                             partial=True)
         serializer.is_valid(raise_exception=True)
+        # получение кода подтверждения
+        confirmation_code = serializer.validated_data.pop('confirmation_code', None)
+        # TODO Добавить проверку кода подтверждения
         serializer.save()
         responce_serializer = ClientResponseSerializer(
             data={'phone': self.current_client.phone,
@@ -69,93 +76,47 @@ class ClientProfileView(BaseAPIView):
                         status=status.HTTP_200_OK)
 
 
-class ClientChangePasswordRequestView(BaseAPIView):
+class ClientDataToProfileView(BaseAPIView):
     """
-    Восстановление пароля клиента.
-    ЭТАП 1. Предоставляется телефон.
-    Оператору отправляется запрос на получение СМС.
-    Полученный СМС сохраняется в БД.
-    На телефон клиента отправляется СМС для подтверждения изменения пароля.
+    Временная заглушка до решения о том, 
+    как будут доставляться данные в эндпоинт 'profile'
+    для изменения данных и получения подтверждение клиента.
+    Реализовыавать тут изменения данных без полученя подтвержденя, не имеет смысла.
+    
+    Создает и сохраняет СМС в БД для подтверждения.
+    Направляет СМС код клиенту на телефон через оператора.
+    Получает и возвращает данные для изменения профиля клиента.
+    Требует авторизации.
     """
-
+    
+    permission_classes = (IsAuthenticated,)
     @swagger_auto_schema(
         tags=['client'],
-        operation_summary='Request for change password',
-        request_body=ClientChangePasswordRequestSerializer(),
+        operation_summary='Data_to_update profile',
+        request_body=ClientDataToProfileSerializer(),
         responses={
-            status.HTTP_200_OK: ClientChangePasswordRequestSerializer(),
-            status.HTTP_404_NOT_FOUND: HTTP_STATUS_MSG[404],
-        }
-    )
-    def post(self, request):
-        serializer = ClientChangePasswordRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        phone = serializer.validated_data.get('phone')
-        client = get_object_or_404(Client, phone=phone) # noqa
-        # TODO запрос на получение клиентом СМС.
-        # TODO сохранение в БД СМС для клиента.
-        # TODO если выше прошло удачно возвращаем статус 200.
-        return Response(serializer.validated_data,
-                        status=status.HTTP_200_OK)
-
-
-class ClientChangePasswordConfirmationView(BaseAPIView):
-    """
-    Восстановление пароля клиента.
-    ЭТАП 2. Передается телефон и СМС.
-    Полученный от клиента СМС сравниевает с тем, который в БД.
-    Если ок, то клиент логинится.
-    """
-    # NOTE временная переменная до подключения получения СМС из БД
-    VALID_CODE = "0000"
-
-    @swagger_auto_schema(
-        tags=['client'],
-        operation_summary='Confirmation by sms for change password',
-        request_body=ClientChangePasswordConfirmationSerializer(),
-        responses={
-            status.HTTP_200_OK: HTTP_STATUS_MSG[200],
+            status.HTTP_200_OK: ClientDataToProfileSerializer(),
             status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
         }
-    )
+    )    
     def post(self, request):
-        serializer = ClientChangePasswordConfirmationSerializer(
-            data=request.data
-        )
+        serializer = ClientDataToProfileSerializer(self.current_client,
+                                                  data=request.data,
+                                                  partial=True)
         serializer.is_valid(raise_exception=True)
-        phone = serializer.validated_data.get('phone')
-        client = get_object_or_404(Client, phone=phone) # noqa
-        confirmation_code = serializer.validated_data.get(  # noqa
-            'confirmation_code'
-        )
-        try:
-            # TODO получаем из БД СМС клиента
-            # TODO проверяем что СМС из БД соответствует confirmation_code
-            # NOTE временный код где проверяем, что confirmation_code
-            # совпадает с VALID_CODE
-            if confirmation_code != self.VALID_CODE:
-                # Если код неверный, вызываем исключение ValidationError
-                raise ValidationError('Invalid confirmation code')
-                # Если код верный, логируем клиента
-            login(request, client)
-            return Response(status=status.HTTP_200_OK)
-
-        except Exception as e:  # noqa
-            # какой-то Exception - выбрасывает клиент по валидации смс,
-            # если оно неверпное, нужно обработать и сделать Validation error
-            raise ValidationError('Invalid confirmation code')
-
+        return Response(request.data,
+                        status=status.HTTP_200_OK)
+  
 
 class ClientChangePasswordView(BaseAPIView):
     """
+    !!!НЕ ЗАВЕРШЕН!!!
     Восстановление пароля клиента.
-    ЭТАП 3. Залогиненым изменяется пароль на новый.
+    Изменяется пароль на новый и получает токен.
     """
-    permission_classes = (IsAuthenticated,)
-
     @swagger_auto_schema(
         tags=['client'],
-        operation_summary='Make change password',
+        operation_summary='Сhange password',
         request_body=ClientChangePasswordSerializer(),
         responses={
             status.HTTP_200_OK: ClientResponseSerializer(),
@@ -163,27 +124,30 @@ class ClientChangePasswordView(BaseAPIView):
         }
     )
     def patch(self, request):
-        # Используется для обновления сведений о профиле клиента.
-        serializer = ClientChangePasswordSerializer(self.current_client,
-                                                    data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        # Повторная аутентификация пользователя после сохранения изменений
-        login(request, self.current_client)
-        responce_serializer = ClientResponseSerializer(
-            data={'phone': self.current_client.phone,
-                  'fullname': self.current_client.fullname}
-        )
-        responce_serializer.is_valid()
-        return Response(responce_serializer.data,
-                        status=status.HTTP_200_OK)
+        pass
+#         # Используется для обновления сведений о профиле клиента.
+#         serializer = ClientChangePasswordSerializer(self.current_client,
+#                                                     data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save()
+#         # Повторная аутентификация пользователя после сохранения изменений
+#         login(request, self.current_client)
+#         responce_serializer = ClientResponseSerializer(
+#             data={'phone': self.current_client.phone,
+#                   'fullname': self.current_client.fullname}
+#         )
+#         responce_serializer.is_valid()
+#         return Response(responce_serializer.data,
+#                         status=status.HTTP_200_OK)
 
 
 class ClientConfirmationView(BaseAPIView):
-    permission_classes = (IsAuthenticated,)
     """
     Подтверждение клиента.
+    Есть сомнения в необходимости.
+    Т.к. создание клиента без подтверждения не требуется.
     """
+    permission_classes = (IsAuthenticated,)
     serializer_class = ConfirmationSerializer
     VALID_CODE = "0000"
 
@@ -223,6 +187,40 @@ class ClientConfirmationView(BaseAPIView):
         return Response(status=status.HTTP_200_OK)
 
 
+class ClientDataToRegistrationView(BaseAPIView):
+    """
+    Временная заглушка до решения о том, 
+    как будут доставляться данные в эндпоинт 'signup'
+    для создания и подтверждение клиента. 
+    Создавать тут клиента, не имеющего подтвержденя телефона, не имеет смысла.
+    
+    Создает и сохраняет СМС в БД для подтверждения номера клиента.
+    Направляет СМС код клиенту на телефон через оператора.
+    Получает и возвращает данные для создания клиента.
+    """
+    serializer_class = ClientGetDataRegistrationSerializer
+
+    @swagger_auto_schema(
+        tags=['client'],
+        operation_summary='Get data and make SMS request',
+        request_body=ClientGetDataRegistrationSerializer(),
+        responses={
+            status.HTTP_201_CREATED: ClientGetDataRegistrationSerializer(),
+            status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
+        }
+    )
+    def post(self, request):
+        client_serializer = self.serializer_class(data=request.data)
+        client_serializer.is_valid(raise_exception=True)
+        response_data = {
+            'phone': request.data['phone'],
+            'fullname': request.data['fullname'],
+            'password':  request.data['password']
+        }
+        return Response(response_data,
+                        status=status.HTTP_200_OK)
+
+
 class ClientRegistrationView(BaseAPIView):
     """
     Создание и авторизация нового клиента.
@@ -232,7 +230,7 @@ class ClientRegistrationView(BaseAPIView):
 
     @swagger_auto_schema(
         tags=['client'],
-        operation_summary='Registration',
+        operation_summary='Signup',
         request_body=ClientSerializer(),
         responses={
             status.HTTP_201_CREATED: ClientLoginSerializer(),
@@ -242,6 +240,9 @@ class ClientRegistrationView(BaseAPIView):
     def post(self, request):
         client_serializer = self.serializer_class(data=request.data)
         client_serializer.is_valid(raise_exception=True)
+        # Получение кода подтверждения из сериалайзера
+        confirmation_code = client_serializer.validated_data.pop('confirmation_code', None)
+        # TODO Добавить проверку кода подтверждения
         # Создание клиента
         client_serializer.save()
         # Аутентификация пользователя
