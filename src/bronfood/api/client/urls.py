@@ -4,20 +4,14 @@ from djoser.views import TokenDestroyView
 from .views import (ClientChangePasswordView,
                     ClientConfirmationView, ClientProfileView,
                     ClientRegistrationView, CustomTokenCreateView,
-                    ClientDataToRegistrationView,  # перенаправление данных
-                    ClientDataToProfileView,
+                    ClientRequestSmsForSignupView,
+                    ClientRequestSmsForProfileView,
                     )
 
 app_name = 'client'
 
 urlpatterns = [
     path('profile/', ClientProfileView.as_view(), name='profile'),
-#     path('change_password/request/',
-#          ClientChangePasswordRequestView.as_view(),
-#          name='change_password_request'),
-#     path('change_password/confirmation/',
-#          ClientChangePasswordConfirmationView.as_view(),
-#          name='change_password_confirmation'),
     path('change_password/',
          ClientChangePasswordView.as_view(),
          name='change_password'),
@@ -38,6 +32,10 @@ urlpatterns += [
 
 # Redirection
 urlpatterns += [
-    path('data_to_signup/', ClientDataToRegistrationView.as_view(), name="data_to_signup"),
-    path('data_to_profile/', ClientDataToProfileView.as_view(), name="data_to_profile"),
+    path('signup/request_sms/',
+         ClientRequestSmsForSignupView.as_view(),
+         name="request_sms_for_signup"),
+    path('profile/request_sms/',
+         ClientRequestSmsForProfileView.as_view(),
+         name="request_sms_for_profile"),
 ]

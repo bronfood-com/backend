@@ -1,5 +1,4 @@
-from django.contrib.auth import authenticate, login
-from django.shortcuts import get_object_or_404
+from django.contrib.auth import authenticate
 from djoser import utils
 from djoser.conf import settings
 from djoser.views import TokenCreateView
@@ -11,18 +10,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from bronfood.api.client.serializers import (
-    ClientChangePasswordConfirmationSerializer,
-    ClientChangePasswordRequestSerializer, ClientChangePasswordSerializer,
+    ClientChangePasswordSerializer,
     ClientLoginSerializer, ClientResponseSerializer, ClientSerializer,
     ClientUpdateSerializer, ConfirmationSerializer,
-    ClientGetDataRegistrationSerializer,
-    ClientDataToProfileSerializer)
+    ClientRequestSmsForSignupSerializer,
+    ClientRequestSmsForProfileSerializer)
 from bronfood.api.constants import HTTP_STATUS_MSG
 from bronfood.api.views import BaseAPIView
-from bronfood.core.client.models import Client, UserAccount
-from django.views.generic.base import RedirectView
-from django.urls import reverse
-import requests
+from bronfood.core.client.models import UserAccount
 
 
 class ClientProfileView(BaseAPIView):
@@ -65,7 +60,8 @@ class ClientProfileView(BaseAPIView):
                                             partial=True)
         serializer.is_valid(raise_exception=True)
         # получение кода подтверждения
-        confirmation_code = serializer.validated_data.pop('confirmation_code', None)
+        confirmation_code = serializer.validated_data.pop(  # noqa
+            'confirmation_code', None)
         # TODO Добавить проверку кода подтверждения
         serializer.save()
         responce_serializer = ClientResponseSerializer(
@@ -76,41 +72,44 @@ class ClientProfileView(BaseAPIView):
                         status=status.HTTP_200_OK)
 
 
-class ClientDataToProfileView(BaseAPIView):
+class ClientRequestSmsForProfileView(BaseAPIView):
     """
-    Временная заглушка до решения о том, 
+    Временная заглушка до решения о том,
     как будут доставляться данные в эндпоинт 'profile'
     для изменения данных и получения подтверждение клиента.
-    Реализовыавать тут изменения данных без полученя подтвержденя, не имеет смысла.
-    
+    Реализовыавать тут изменения данных
+    без полученя подтвержденя, не имеет смысла.
+
     Создает и сохраняет СМС в БД для подтверждения.
     Направляет СМС код клиенту на телефон через оператора.
     Получает и возвращает данные для изменения профиля клиента.
     Требует авторизации.
     """
-    
+
     permission_classes = (IsAuthenticated,)
+
     @swagger_auto_schema(
         tags=['client'],
-        operation_summary='Data_to_update profile',
-        request_body=ClientDataToProfileSerializer(),
+        operation_summary='request_sms_for_profile',
+        request_body=ClientRequestSmsForProfileSerializer(),
         responses={
-            status.HTTP_200_OK: ClientDataToProfileSerializer(),
+            status.HTTP_200_OK: ClientRequestSmsForProfileSerializer(),
             status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
         }
-    )    
+    )
     def post(self, request):
-        serializer = ClientDataToProfileSerializer(self.current_client,
-                                                  data=request.data,
-                                                  partial=True)
+        serializer = ClientRequestSmsForProfileSerializer(
+            self.current_client,
+            data=request.data,
+            partial=True)
         serializer.is_valid(raise_exception=True)
         return Response(request.data,
                         status=status.HTTP_200_OK)
-  
+
 
 class ClientChangePasswordView(BaseAPIView):
     """
-    !!!НЕ ЗАВЕРШЕН!!!
+    НЕ РЕАЛИЗОВАН
     Восстановление пароля клиента.
     Изменяется пароль на новый и получает токен.
     """
@@ -187,25 +186,26 @@ class ClientConfirmationView(BaseAPIView):
         return Response(status=status.HTTP_200_OK)
 
 
-class ClientDataToRegistrationView(BaseAPIView):
+class ClientRequestSmsForSignupView(BaseAPIView):
     """
-    Временная заглушка до решения о том, 
+    Временная заглушка до решения о том,
     как будут доставляться данные в эндпоинт 'signup'
-    для создания и подтверждение клиента. 
-    Создавать тут клиента, не имеющего подтвержденя телефона, не имеет смысла.
-    
+    для создания и подтверждение клиента.
+    Создавать тут клиента, не имеющего подтвержденя телефона,
+    не имеет смысла.
+
     Создает и сохраняет СМС в БД для подтверждения номера клиента.
     Направляет СМС код клиенту на телефон через оператора.
     Получает и возвращает данные для создания клиента.
     """
-    serializer_class = ClientGetDataRegistrationSerializer
+    serializer_class = ClientRequestSmsForSignupSerializer
 
     @swagger_auto_schema(
         tags=['client'],
-        operation_summary='Get data and make SMS request',
-        request_body=ClientGetDataRegistrationSerializer(),
+        operation_summary='request_sms_for_signup',
+        request_body=ClientRequestSmsForSignupSerializer(),
         responses={
-            status.HTTP_201_CREATED: ClientGetDataRegistrationSerializer(),
+            status.HTTP_201_CREATED: ClientRequestSmsForSignupSerializer(),
             status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
         }
     )
@@ -215,7 +215,7 @@ class ClientDataToRegistrationView(BaseAPIView):
         response_data = {
             'phone': request.data['phone'],
             'fullname': request.data['fullname'],
-            'password':  request.data['password']
+            'password': request.data['password']
         }
         return Response(response_data,
                         status=status.HTTP_200_OK)
@@ -241,7 +241,9 @@ class ClientRegistrationView(BaseAPIView):
         client_serializer = self.serializer_class(data=request.data)
         client_serializer.is_valid(raise_exception=True)
         # Получение кода подтверждения из сериалайзера
-        confirmation_code = client_serializer.validated_data.pop('confirmation_code', None)
+        confirmation_code = client_serializer.validated_data.pop(  # noqa
+            'confirmation_code', None
+        )
         # TODO Добавить проверку кода подтверждения
         # Создание клиента
         client_serializer.save()
@@ -253,7 +255,8 @@ class ClientRegistrationView(BaseAPIView):
         )
         if authenticated_user is not None:
             # Выдача токена
-            token, created = Token.objects.get_or_create(user=authenticated_user)
+            token, created = Token.objects.get_or_create(
+                user=authenticated_user)
             # Формирование ответа
             response_data = {
                 'phone': authenticated_user.phone,
@@ -264,7 +267,8 @@ class ClientRegistrationView(BaseAPIView):
             return Response(response_serializer.initial_data,
                             status=status.HTTP_201_CREATED)
         else:
-            return Response({'error': 'Failed to authenticate user'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'Failed to authenticate user'},
+                            status=status.HTTP_401_UNAUTHORIZED)
 
 
 class CustomTokenCreateView(TokenCreateView):
@@ -284,7 +288,8 @@ class CustomTokenCreateView(TokenCreateView):
         token = utils.login_user(self.request, serializer.user)
         token_serializer_class = settings.SERIALIZERS.token
         response_data = token_serializer_class(token).data
-        additional_data = {'fullname': token.user.fullname, 'phone': token.user.phone}
+        additional_data = {'fullname': token.user.fullname,
+                           'phone': token.user.phone}
         response_data.update(additional_data)
         response_serializer = ClientLoginSerializer(data=response_data)
         return Response(
