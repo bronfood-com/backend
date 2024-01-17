@@ -22,6 +22,10 @@ class PaymentRequisites(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self) -> str:
+        return (f'Владелец карты {self.cardholder_name}, '
+                f'номер карты {self.card_number}')
+
     class Meta:
         constraints = [
             UniqueConstraint(
