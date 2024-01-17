@@ -11,8 +11,10 @@ class PhoneSmsOtpVerificationTest(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.user = User.objects.create_user(username='auth')
         cls.phone_number = '76665554433'
+        cls.user = User.objects.create_user(
+            username='auth', phone=cls.phone_number
+        )
 
     def test_verbose_name(self):
         """Verifying the verbose name of the PhoneSmsOtpVerification model."""
