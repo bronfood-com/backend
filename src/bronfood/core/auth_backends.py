@@ -1,7 +1,9 @@
 # custom auth_backends.py
 
 from django.contrib.auth.backends import BaseBackend
-from .models import CustomUser
+# from .models import CustomUser
+from bronfood.core.client.models import Client
+# from bronfood.core.restaurant_owner.models import 
 
 
 class PhoneBackend(BaseBackend):
@@ -27,4 +29,4 @@ class PhoneBackend(BaseBackend):
 
 
 class UsernameBackend(BaseBackend):
-    """Работает для админа ресторана, проерка пароля и юзернэйм."""
+    """Работает для админа ресторана, проверка пароля и юзернэйм."""
