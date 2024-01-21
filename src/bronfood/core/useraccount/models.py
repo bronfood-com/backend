@@ -78,3 +78,22 @@ class UserAccount(AbstractBaseUser):
     @property
     def is_superuser(self):
         return self.role == UserAccount.Role.ADMIN
+
+
+class TempUserAccountData(models.Model):
+    """
+    Временное хранение данных пользователя.
+    """
+
+    new_password = models.CharField(
+        max_length=128,
+        null=True)
+    user = models.ForeignKey(
+        UserAccount, on_delete=models.CASCADE, related_name='temp'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return self.user + self.created_at
