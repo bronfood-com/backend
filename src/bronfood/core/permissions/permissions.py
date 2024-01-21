@@ -28,7 +28,7 @@ class IsAuthenticatedRestaurantAdmin(permissions.BasePermission):
 class IsAuthenticatedClient(permissions.BasePermission):
     """ Класс определеня прав для клиента ресторана/заведения."""
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == 'client' 
+        return request.user.is_authenticated and request.user.role == 'client'
 
     def has_object_permission(self, request, view, obj):
         return obj.user == request.user
