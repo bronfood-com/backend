@@ -11,11 +11,11 @@ urlpatterns = [
     path(
         'users/<int:user_id>/bank-card',
         PaymentRequisitesCreateView.as_view(),
-        name='payment-requisites'
+        name='payment_requisites_list'
     ),
     path(
         'users/<int:user_id>/bank-card/<int:card_id>',
         PaymentRequisitesUpdateView.as_view(),
-        name='payment-requisites'
+        name='payment_requisites_detail'
     ),
 ]
