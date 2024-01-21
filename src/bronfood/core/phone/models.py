@@ -67,6 +67,7 @@ class PhoneSmsOtpVerification(models.Model):
 
     class Meta:
         ordering = ('-created_at',)
+        db_table = 'phone_sms_otp_verification'
 
     def __str__(self):
         return self.message + self.code
