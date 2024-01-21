@@ -7,6 +7,40 @@ from bronfood.core.useraccount.validators import (
     PasswordValidator)
 
 
+class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
+    """
+    Сериалайзер данных клиента.
+    - password
+    - phone
+    - fullname
+    
+    Предусматривает создание объекта клиента.
+    Обеспечивает кодирование пароля перед сохранением в БД.
+    """
+    password = serializers.CharField(
+        write_only=True,
+        validators=[PasswordValidator()]
+    )
+    phone = serializers.CharField(
+        validators=[KazakhstanPhoneNumberValidator()]
+    )
+    fullname = serializers.CharField(
+        validators=[FullnameValidator()]
+    )
+    
+    class Meta:
+        model = Client
+        fields = ['password', 'phone', 'fullname']
+    
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        user = super().create(validated_data)
+        if password:
+            # Обеспечивает кодирование пароля перед сохранением в БД.
+            user.set_password(password)
+            user.save(update_fields=['password'])
+        return user
+
 class ClientChangePasswordRequestSerializer(serializers.Serializer):
     """
     Запрос на смену пароля.
@@ -25,27 +59,6 @@ class ClientChangePasswordConfirmationSerializer(serializers.Serializer):
         validators=[ConfirmationValidator()],
         write_only=True,
     )
-
-
-class ClientGetDataRegistrationSerializer(serializers.ModelSerializer):
-    """
-    Сериалайзер модели клиента.
-    Обеспечивает кодирование пароля перед сохранением в БД.
-    """
-    password = serializers.CharField(
-        write_only=True,
-        validators=[PasswordValidator()]
-    )
-    phone = serializers.CharField(
-        validators=[KazakhstanPhoneNumberValidator()]
-    )
-    fullname = serializers.CharField(
-        validators=[FullnameValidator()]
-    )
-    
-    class Meta:
-        model = Client
-        fields = ['password', 'phone', 'fullname']
 
 
 class ClientSerializer(serializers.ModelSerializer):

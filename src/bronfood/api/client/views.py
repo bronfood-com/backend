@@ -15,14 +15,145 @@ from bronfood.api.client.serializers import (
     ClientChangePasswordRequestSerializer, ClientChangePasswordSerializer,
     ClientLoginSerializer, ClientResponseSerializer, ClientSerializer,
     ClientUpdateSerializer, ConfirmationSerializer,
-    ClientGetDataRegistrationSerializer,
-    ClientDataToProfileSerializer)
+    ClientDataToProfileSerializer,
+    ClientRequestRegistrationSerializer
+)
 from bronfood.api.constants import HTTP_STATUS_MSG
 from bronfood.api.views import BaseAPIView
 from bronfood.core.client.models import Client, UserAccount
+from bronfood.core.useraccount.models import TempUserAccountData
+
 from django.views.generic.base import RedirectView
 from django.urls import reverse
 import requests
+
+
+class ClientRequestRegistrationView(BaseAPIView):
+    """
+    Создание объекта клиента с неподтвержденным статусом.
+    Формирование и отравка кода подтверждения клиенту на телефон.
+    """
+    serializer_class = ClientRequestRegistrationSerializer
+
+    def post(self, request):
+        client_serializer = self.serializer_class(data=request.data)
+        client_serializer.is_valid(raise_exception=True)
+        # Создание неподтвержденного клиента
+        client_serializer.save()
+        client = client_serializer.instance
+
+        # TODO: создание СМС с нужной причиной в объекте клинта и отправка на телефон
+
+        response_data = {
+            'id': client.id,
+        }
+        return Response(
+            data = response_data,
+            status=status.HTTP_201_CREATED)
+
+
+class ClientRegistrationView(BaseAPIView):
+    """
+    Аутентификация клиента при получении валидного кода подтверждения.
+    """
+    def post(self, request):
+        client_id = request.data.get('id')
+        client = Client.objects.get(id=client_id)
+
+        # TODO: добавить проверку кода подтверждения у клиента.
+        # если есть активный код подтверждения у клиента
+        # если причина создания кода подтверждения - регистрация
+        # то осуществляю аутентификацию и перевод клиента в активный статус
+
+        client.status = UserAccount.Status.CONFIRMED
+        client.save(update_fields=['status', ])
+        token, created = Token.objects.get_or_create(user=client)
+        # Формирование ответа
+        response_data = {
+            'phone': client.phone,
+            'fullname': client.fullname,
+            'auth_token': token.key
+        }
+        return Response(response_data,
+                        status=status.HTTP_200_OK)
+
+
+class ClientChangePasswordRequestView(BaseAPIView):
+    """
+    Клиент делает запрос на смену пароля.
+    Отправляет телефон.
+    Выполняются проверки:
+    - валидности формата телефона.
+    - наличия клиента с таким телефоном.
+    Вовращает id клиента.
+    """
+    # TODO: проверить как у владельца осуществляется восстановление пароля.
+
+    def post(self, request):
+        # проверить в сериализаторе, что верный формат телефона
+        client_phone = request.data.get('phone')
+        # client = Client.objects.get(phone=client_phone)
+        client = Client.objects.filter(phone=client_phone).first()
+        if not client:
+            # сообщить, что пользователя с таким телефоном отсутствует
+            error_data = {
+                'status': 'error',
+                'errorMessage': HTTP_STATUS_MSG[404]
+            }
+            return Response(
+                data = error_data,
+                status=status.HTTP_404_NOT_FOUND)
+
+        response_data = {
+            'status': 'success',
+            'data': {
+                'id': client.id
+            }
+        }
+        return Response(
+            data = response_data,
+            status=status.HTTP_200_OK)
+    
+
+class ClientChangePasswordConfirmationView(BaseAPIView):
+    """
+    Клиент вводит новый пароль.
+    Выполняются проверки:
+    - валидности формата пароля.
+    - пароль и повторный пароль совпадают.
+    Предложенный пароль временно сохраняется в бд.
+    Формируется, сохраняется в бд и направляется клиенту код подтверждения.
+    Вовращает id клиента.
+    """
+    # TODO: проверить как у владельца осуществляется восстановление пароля.
+
+    def post(self, request):
+        # проверить в сериализаторе, что верный формат телефона
+        new_password = request.data.get('new_password')
+        new_password_confirm = request.data.get('new_password_confirm')
+        
+        if new_password != new_password_confirm:
+            pass
+        
+        client_id = request.data.get('id')
+        client = Client.objects.get(id=client_id)
+        # создание временных данных
+        temp_user_account_data = TempUserAccountData(
+            new_password=new_password,
+            user=client
+        )
+        temp_user_account_data.save()
+
+        # TODO: создание СМС с нужной причиной в объекте клинта и отправка на телефон
+        response_data = {
+            'status': 'success',
+            'data': {
+                'id': client.id
+            }
+        }
+        return Response(
+            data = response_data,
+            status=status.HTTP_200_OK)
 
 
 class ClientProfileView(BaseAPIView):
@@ -198,14 +329,14 @@ class ClientDataToRegistrationView(BaseAPIView):
     Направляет СМС код клиенту на телефон через оператора.
     Получает и возвращает данные для создания клиента.
     """
-    serializer_class = ClientGetDataRegistrationSerializer
+    serializer_class = ClientRequestRegistrationSerializer
 
     @swagger_auto_schema(
         tags=['client'],
         operation_summary='Get data and make SMS request',
-        request_body=ClientGetDataRegistrationSerializer(),
+        request_body=ClientRequestRegistrationSerializer(),
         responses={
-            status.HTTP_201_CREATED: ClientGetDataRegistrationSerializer(),
+            status.HTTP_201_CREATED: ClientRequestRegistrationSerializer(),
             status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
         }
     )
@@ -219,52 +350,6 @@ class ClientDataToRegistrationView(BaseAPIView):
         }
         return Response(response_data,
                         status=status.HTTP_200_OK)
-
-
-class ClientRegistrationView(BaseAPIView):
-    """
-    Создание и авторизация нового клиента.
-    Отправка СМС для валидации телефона клиента.
-    """
-    serializer_class = ClientSerializer
-
-    @swagger_auto_schema(
-        tags=['client'],
-        operation_summary='Signup',
-        request_body=ClientSerializer(),
-        responses={
-            status.HTTP_201_CREATED: ClientLoginSerializer(),
-            status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
-        }
-    )
-    def post(self, request):
-        client_serializer = self.serializer_class(data=request.data)
-        client_serializer.is_valid(raise_exception=True)
-        # Получение кода подтверждения из сериалайзера
-        confirmation_code = client_serializer.validated_data.pop('confirmation_code', None)
-        # TODO Добавить проверку кода подтверждения
-        # Создание клиента
-        client_serializer.save()
-        # Аутентификация пользователя
-        authenticated_user = authenticate(
-            request=request,
-            phone=client_serializer.validated_data.get('phone'),
-            password=client_serializer.validated_data['password']
-        )
-        if authenticated_user is not None:
-            # Выдача токена
-            token, created = Token.objects.get_or_create(user=authenticated_user)
-            # Формирование ответа
-            response_data = {
-                'phone': authenticated_user.phone,
-                'fullname': authenticated_user.fullname,
-                'auth_token': token.key
-            }
-            response_serializer = ClientLoginSerializer(data=response_data)
-            return Response(response_serializer.initial_data,
-                            status=status.HTTP_201_CREATED)
-        else:
-            return Response({'error': 'Failed to authenticate user'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class CustomTokenCreateView(TokenCreateView):
@@ -290,3 +375,48 @@ class CustomTokenCreateView(TokenCreateView):
         return Response(
             data=response_serializer.initial_data, status=status.HTTP_200_OK
         )
+
+# class ClientRegistrationView(BaseAPIView):
+#     """
+#     Создание объекта клиента с неподтвержденным статусом.
+#     Формирование и отравка кода подтверждения клиенту на телефон.
+#     """
+#     serializer_class = ClientSerializer
+
+#     @swagger_auto_schema(
+#         tags=['client'],
+#         operation_summary='Signup',
+#         request_body=ClientSerializer(),
+#         responses={
+#             status.HTTP_201_CREATED: ClientLoginSerializer(),
+#             status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
+#         }
+#     )
+#     def post(self, request):
+#         client_serializer = self.serializer_class(data=request.data)
+#         client_serializer.is_valid(raise_exception=True)
+#         # Получение кода подтверждения из сериалайзера
+#         confirmation_code = client_serializer.validated_data.pop('confirmation_code', None)
+#         # TODO Добавить проверку кода подтверждения
+#         # Создание клиента
+#         client_serializer.save()
+#         # Аутентификация пользователя
+#         authenticated_user = authenticate(
+#             request=request,
+#             phone=client_serializer.validated_data.get('phone'),
+#             password=client_serializer.validated_data['password']
+#         )
+#         if authenticated_user is not None:
+#             # Выдача токена
+#             token, created = Token.objects.get_or_create(user=authenticated_user)
+#             # Формирование ответа
+#             response_data = {
+#                 'phone': authenticated_user.phone,
+#                 'fullname': authenticated_user.fullname,
+#                 'auth_token': token.key
+#             }
+#             response_serializer = ClientLoginSerializer(data=response_data)
+#             return Response(response_serializer.initial_data,
+#                             status=status.HTTP_201_CREATED)
+#         else:
+#             return Response({'error': 'Failed to authenticate user'}, status=status.HTTP_401_UNAUTHORIZED)
