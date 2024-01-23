@@ -2,7 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from .validators import (FullnameValidator,
                          KazakhstanPhoneNumberValidator)
-
+import random
+from bronfood.core.constants import LETTERS_AND_DIGITS, TEMP_DATA_CODE_LENGTH
 
 class UserAccountManager(BaseUserManager):
     def create_user(self, phone, username, password=None):
@@ -80,20 +81,36 @@ class UserAccount(AbstractBaseUser):
         return self.role == UserAccount.Role.ADMIN
 
 
-class TempUserAccountData(models.Model):
+class UserAccountTempData(models.Model):
     """
     Временное хранение данных пользователя.
     """
-
+    temp_data_code = models.CharField(
+        max_length=TEMP_DATA_CODE_LENGTH,
+    )
     new_password = models.CharField(
         max_length=128,
         null=True)
-    user = models.ForeignKey(
-        UserAccount, on_delete=models.CASCADE, related_name='temp'
+    user = models.OneToOneField(
+        UserAccount,
+        on_delete=models.CASCADE,
+        related_name='user_account_temp_data',
     )
     created_at = models.DateTimeField(
         auto_now_add=True
     )
 
+    @classmethod
+    def get_unique_data_code(cls) -> str:
+        """получение уникального кода"""
+        rand_string = ''.join(random.choices(
+            population=LETTERS_AND_DIGITS,
+            k=TEMP_DATA_CODE_LENGTH)
+        )
+        # возврат только уникального результата
+        if not cls.objects.filter(temp_data_code=rand_string).exists():
+            return rand_string
+        return cls.get_unique_data_code()
+    
     def __str__(self):
-        return self.user + self.created_at
+        return self.temp_data_code

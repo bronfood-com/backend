@@ -21,11 +21,12 @@ from bronfood.api.client.serializers import (
 from bronfood.api.constants import HTTP_STATUS_MSG
 from bronfood.api.views import BaseAPIView
 from bronfood.core.client.models import Client, UserAccount
-from bronfood.core.useraccount.models import TempUserAccountData
+from bronfood.core.useraccount.models import UserAccountTempData
 
 from django.views.generic.base import RedirectView
 from django.urls import reverse
 import requests
+from bronfood.api.client.utils import error_data
 
 
 class ClientRequestRegistrationView(BaseAPIView):
@@ -42,10 +43,16 @@ class ClientRequestRegistrationView(BaseAPIView):
         client_serializer.save()
         client = client_serializer.instance
 
-        # TODO: создание СМС с нужной причиной в объекте клинта и отправка на телефон
+        # Создание объекта UserAccountTempData
+        temp_data_obj = UserAccountTempData.objects.create(
+            temp_data_code=UserAccountTempData.get_unique_data_code(),
+            user=client
+        )
+        temp_data_obj.save()
 
+        # TODO: создание СМС с нужной причиной в объекте клинта и отправка на телефон
         response_data = {
-            'id': client.id,
+            'temp_data_code': temp_data_obj.temp_data_code,
         }
         return Response(
             data = response_data,
@@ -57,8 +64,9 @@ class ClientRegistrationView(BaseAPIView):
     Аутентификация клиента при получении валидного кода подтверждения.
     """
     def post(self, request):
-        client_id = request.data.get('id')
-        client = Client.objects.get(id=client_id)
+        temp_data_code = request.data.get('temp_data_code')
+        temp_data = get_object_or_404(UserAccountTempData, temp_data_code=temp_data_code)
+        client = temp_data.user
 
         # TODO: добавить проверку кода подтверждения у клиента.
         # если есть активный код подтверждения у клиента
@@ -67,6 +75,7 @@ class ClientRegistrationView(BaseAPIView):
 
         client.status = UserAccount.Status.CONFIRMED
         client.save(update_fields=['status', ])
+        temp_data.delete()
         token, created = Token.objects.get_or_create(user=client)
         # Формирование ответа
         response_data = {
@@ -96,14 +105,10 @@ class ClientChangePasswordRequestView(BaseAPIView):
         client = Client.objects.filter(phone=client_phone).first()
         if not client:
             # сообщить, что пользователя с таким телефоном отсутствует
-            error_data = {
-                'status': 'error',
-                'errorMessage': HTTP_STATUS_MSG[404]
-            }
             return Response(
-                data = error_data,
-                status=status.HTTP_404_NOT_FOUND)
-
+                data = error_data(HTTP_STATUS_MSG[404]),
+                status=status.HTTP_404_NOT_FOUND
+            )
         response_data = {
             'status': 'success',
             'data': {
@@ -138,7 +143,7 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
         client_id = request.data.get('id')
         client = Client.objects.get(id=client_id)
         # создание временных данных
-        temp_user_account_data = TempUserAccountData(
+        temp_user_account_data = UserAccountTempData(
             new_password=new_password,
             user=client
         )
