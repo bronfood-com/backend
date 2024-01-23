@@ -3,6 +3,7 @@ from django.db import models
 
 from bronfood.core.client.models import Client
 from django.db.models import UniqueConstraint
+from django.core.validators import MinLengthValidator, MaxLengthValidator
 
 
 class PaymentRequisites(models.Model):
@@ -14,7 +15,11 @@ class PaymentRequisites(models.Model):
         related_name='bank_card'
     )
     # restaurant_owner = ...
-    card_number = models.CharField(max_length=16)
+    card_number = models.CharField(
+        validators=[
+            MinLengthValidator(16), MaxLengthValidator(16)
+        ]
+    )
     cardholder_name = models.CharField(max_length=255)
     expiration_data = models.CharField()
     cvv = models.IntegerField(

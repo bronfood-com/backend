@@ -20,9 +20,7 @@ class PaymentRequisitesCreateSerializer(
         return PaymentRequisites.objects.create(**validated_data)
 
 
-class PaymentRequisitesUpdateSerializer(serializers.ModelSerializer):
-    # cvv = serializers.SerializerMethodField()
-
+class PaymentRequisitesUpdateGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentRequisites
         fields = ['card_number', 'cardholder_name', 'expiration_data', 'cvv']
@@ -46,10 +44,6 @@ class PaymentRequisitesUpdateSerializer(serializers.ModelSerializer):
         )
         instance.save()
         return instance
-
-    # def get_cvv(self, obj):
-    #     # Здесь вы можете вернуть "Данные не доступны" или что-то еще
-    #     return "Данные не доступны"
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
