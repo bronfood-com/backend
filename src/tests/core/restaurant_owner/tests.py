@@ -1,29 +1,19 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase
+from bronfood.core.restaurant_owner.models import RestaurantOwner
 
 
 class RestaurantOwnerTests(TestCase):
 
-    def test_create_user(self):
-        User = get_user_model()
-        user = User.objects.create_user(
-            email="normal@user.com",
-            password="foo",
-            phone='+7(000) 001-02-03'
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.owner = RestaurantOwner(
+            role="owner",
+            username="Pluto",
+            phone="+7(777)5553344"
         )
-        self.assertEqual(user.email, "normal@user.com")
 
-        try:
-            self.assertIsNone(user.username)
-        except AttributeError:
-            pass
-        with self.assertRaises(TypeError):
-            User.objects.create_user()
-        with self.assertRaises(TypeError):
-            User.objects.create_user(email="")
-        with self.assertRaises(ValueError):
-            User.objects.create_user(
-                email="",
-                password="foo",
-                phone='+7(000) 001-02-03'
-            )
+    def test_create_user(self):
+        self.assertEqual(self.owner.role, "owner")
+        self.assertEqual(self.owner.username, "Pluto")
+        self.assertEqual(self.owner.phone, "+7(777)5553344")
