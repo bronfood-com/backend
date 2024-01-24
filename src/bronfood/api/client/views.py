@@ -94,14 +94,13 @@ class ClientChangePasswordRequestView(BaseAPIView):
     Выполняются проверки:
     - валидности формата телефона.
     - наличия клиента с таким телефоном.
-    Вовращает id клиента.
+    Вовращает уникальный код, связанный с объектом клиента.
     """
     # TODO: проверить как у владельца осуществляется восстановление пароля.
 
     def post(self, request):
-        # проверить в сериализаторе, что верный формат телефона
         client_phone = request.data.get('phone')
-        # client = Client.objects.get(phone=client_phone)
+        # проверить в сериализаторе, что верный формат телефона        
         client = Client.objects.filter(phone=client_phone).first()
         if not client:
             # сообщить, что пользователя с таким телефоном отсутствует
@@ -109,10 +108,16 @@ class ClientChangePasswordRequestView(BaseAPIView):
                 data = error_data(HTTP_STATUS_MSG[404]),
                 status=status.HTTP_404_NOT_FOUND
             )
+        # Создание объекта UserAccountTempData
+        temp_data_obj = UserAccountTempData.objects.create(
+            temp_data_code=UserAccountTempData.get_unique_data_code(),
+            user=client
+        )
+        temp_data_obj.save()
         response_data = {
             'status': 'success',
             'data': {
-                'id': client.id
+                'temp_data_code': temp_data_obj.temp_data_code
             }
         }
         return Response(
@@ -133,32 +138,75 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
     # TODO: проверить как у владельца осуществляется восстановление пароля.
 
     def post(self, request):
-        # проверить в сериализаторе, что верный формат телефона
+        temp_data_code = request.data.get('temp_data_code')
         new_password = request.data.get('new_password')
         new_password_confirm = request.data.get('new_password_confirm')
-        
         if new_password != new_password_confirm:
-            pass
+            return Response(
+                data = error_data(HTTP_STATUS_MSG[400]),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # получение объекта клиента из кода
+        temp_data = get_object_or_404(UserAccountTempData, temp_data_code=temp_data_code)
+        client = temp_data.user
+        temp_data.delete()
         
-        client_id = request.data.get('id')
-        client = Client.objects.get(id=client_id)
-        # создание временных данных
-        temp_user_account_data = UserAccountTempData(
-            new_password=new_password,
-            user=client
-        )
-        temp_user_account_data.save()
+        # TODO: создание СМС с нужной причиной в объекте клинта и отправка на телефон 
 
-        # TODO: создание СМС с нужной причиной в объекте клинта и отправка на телефон
+        # Создание объекта UserAccountTempData        
+        temp_data_obj = UserAccountTempData.objects.create(
+            temp_data_code=UserAccountTempData.get_unique_data_code(),
+            user=client,
+            new_password=new_password
+        )
+        temp_data_obj.save()
+        
         response_data = {
             'status': 'success',
             'data': {
-                'id': client.id
+                'temp_data_code': temp_data_obj.temp_data_code
             }
         }
         return Response(
             data = response_data,
             status=status.HTTP_200_OK)
+
+
+class ClientChangePasswordCompleteView(BaseAPIView):
+    """
+    Восстановление пароля клиента.
+    Изменяется пароль на новый и получает токен.
+    """
+    CONFIRMATION_CODE = '0000'
+    def patch(self, request):
+        temp_data_code = request.data.get('temp_data_code')
+        confimation_code = request.data.get('confimation_code')
+               
+        temp_data = get_object_or_404(UserAccountTempData, temp_data_code=temp_data_code)
+        client = temp_data.user
+        
+        if confimation_code != self.CONFIRMATION_CODE:
+            return Response(
+                data = error_data(HTTP_STATUS_MSG[400]),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        data = {'new_password': temp_data.new_password}
+        serializer = ClientChangePasswordSerializer(client,
+                                                    data=data)
+        # ошибка в сериализаторе
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        temp_data.delete()
+        token, created = Token.objects.get_or_create(user=client)
+
+        response_data = {
+            'phone': client.phone,
+            'fullname': client.fullname,
+            'auth_token': token.key
+        }
+        return Response(response_data,
+                        status=status.HTTP_200_OK)
 
 
 class ClientProfileView(BaseAPIView):
@@ -244,23 +292,22 @@ class ClientDataToProfileView(BaseAPIView):
                         status=status.HTTP_200_OK)
   
 
-class ClientChangePasswordView(BaseAPIView):
-    """
-    !!!НЕ ЗАВЕРШЕН!!!
-    Восстановление пароля клиента.
-    Изменяется пароль на новый и получает токен.
-    """
-    @swagger_auto_schema(
-        tags=['client'],
-        operation_summary='Сhange password',
-        request_body=ClientChangePasswordSerializer(),
-        responses={
-            status.HTTP_200_OK: ClientResponseSerializer(),
-            status.HTTP_404_NOT_FOUND: HTTP_STATUS_MSG[404],
-        }
-    )
-    def patch(self, request):
-        pass
+# class ClientChangePasswordCompleteView(BaseAPIView):
+#     """
+#     Восстановление пароля клиента.
+#     Изменяется пароль на новый и получает токен.
+#     """
+#     @swagger_auto_schema(
+#         tags=['client'],
+#         operation_summary='Сhange password',
+#         request_body=ClientChangePasswordSerializer(),
+#         responses={
+#             status.HTTP_200_OK: ClientResponseSerializer(),
+#             status.HTTP_404_NOT_FOUND: HTTP_STATUS_MSG[404],
+#         }
+#     )
+#     def patch(self, request):
+#         pass
 #         # Используется для обновления сведений о профиле клиента.
 #         serializer = ClientChangePasswordSerializer(self.current_client,
 #                                                     data=request.data)

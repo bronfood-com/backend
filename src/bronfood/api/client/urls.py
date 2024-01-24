@@ -1,7 +1,7 @@
 from django.urls import path, re_path
 from djoser.views import TokenDestroyView
 
-from .views import (ClientChangePasswordView,
+from .views import (ClientChangePasswordCompleteView,
                     ClientConfirmationView,
                     ClientProfileView,
                     ClientRegistrationView,
@@ -25,15 +25,19 @@ urlpatterns = [
     path('change_password/request/',  # запрос на смену пароля
          ClientChangePasswordRequestView.as_view(),
          name='change_password_request'),
-    path('change_password/confirmation/',
+    path('change_password/confirmation/', # подтверждение
          ClientChangePasswordConfirmationView.as_view(),
          name='change_password_confirmation'),
+     path('change_password/complete/',
+         ClientChangePasswordCompleteView.as_view(),
+         name='change_password_compelete'),
+
     path('profile/', ClientProfileView.as_view(), name='profile'),
 #     path('change_password/confirmation/',
 #          ClientChangePasswordConfirmationView.as_view(),
 #          name='change_password_confirmation'),
     path('change_password/',
-         ClientChangePasswordView.as_view(),
+         ClientChangePasswordCompleteView.as_view(),
          name='change_password'),
     path('confirmation/',
          ClientConfirmationView.as_view(),
