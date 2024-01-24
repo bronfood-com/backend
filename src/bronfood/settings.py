@@ -144,7 +144,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'useraccount.UserAccount'
 
 
-SMS_SETTINGS = {
-    'BACKEND': 'bronfood.core.phone.sms.backends.dummy.SmsBackend' if ENV_NAME == 'local'
-    else os.getenv('BACKEND')
+VENDORS = {
+    'SMS_BACKENDS': {
+        'KAZINFOTECH': {
+                'USERNAME': os.getenv('KAZINFOTECH_USERNAME'),
+                'PASSWORD': os.getenv('KAZINFOTECH_PASSWORD'),
+                'URL': 'https://kazinfoteh.org:9507/api?',
+                'ORIGINATOR': 'INFO_KAZ'
+            }
+        }
 }
