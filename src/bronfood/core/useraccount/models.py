@@ -99,6 +99,17 @@ class UserAccountTempData(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True
     )
+    new_fullname = models.CharField(
+        max_length=40,
+        validators=[FullnameValidator],
+        null=True
+    )
+    new_phone = models.CharField(
+        max_length=18,
+        validators=[KazakhstanPhoneNumberValidator],
+        null=True
+    )
+    
 
     @classmethod
     def get_unique_data_code(cls) -> str:
