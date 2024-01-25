@@ -11,21 +11,20 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from bronfood.api.client.serializers import (
-    ClientChangePasswordConfirmationSerializer,
-    ClientChangePasswordRequestSerializer, ClientChangePasswordSerializer,
-    ClientLoginSerializer, ClientResponseSerializer, ClientSerializer,
+    # ClientChangePasswordConfirmationSerializer,
+    # ClientChangePasswordRequestSerializer, ClientChangePasswordSerializer,
+    ClientLoginSerializer, ClientResponseSerializer,
+    # ClientSerializer,
     ClientUpdateSerializer, ConfirmationSerializer,
     ClientDataToProfileSerializer,
-    ClientRequestRegistrationSerializer
+    ClientRequestRegistrationSerializer,
+    # ClientUpdatePasswordSerializer
 )
 from bronfood.api.constants import HTTP_STATUS_MSG
 from bronfood.api.views import BaseAPIView
 from bronfood.core.client.models import Client, UserAccount
 from bronfood.core.useraccount.models import UserAccountTempData
 
-from django.views.generic.base import RedirectView
-from django.urls import reverse
-import requests
 from bronfood.api.client.utils import error_data
 
 
@@ -50,12 +49,13 @@ class ClientRequestRegistrationView(BaseAPIView):
         )
         temp_data_obj.save()
 
-        # TODO: создание СМС с нужной причиной в объекте клинта и отправка на телефон
+        # TODO: создание СМС с нужной причиной в объекте клинта
+        # и отправка на телефон
         response_data = {
             'temp_data_code': temp_data_obj.temp_data_code,
         }
         return Response(
-            data = response_data,
+            data=response_data,
             status=status.HTTP_201_CREATED)
 
 
@@ -63,9 +63,20 @@ class ClientRegistrationView(BaseAPIView):
     """
     Аутентификация клиента при получении валидного кода подтверждения.
     """
+    CONFIRMATION_CODE = '0000'
+
     def post(self, request):
         temp_data_code = request.data.get('temp_data_code')
-        temp_data = get_object_or_404(UserAccountTempData, temp_data_code=temp_data_code)
+        confimation_code = request.data.get('confimation_code')
+
+        if confimation_code != self.CONFIRMATION_CODE:
+            return Response(
+                data=error_data(HTTP_STATUS_MSG[400]),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        temp_data = get_object_or_404(UserAccountTempData,
+                                      temp_data_code=temp_data_code)
         client = temp_data.user
 
         # TODO: добавить проверку кода подтверждения у клиента.
@@ -100,12 +111,12 @@ class ClientChangePasswordRequestView(BaseAPIView):
 
     def post(self, request):
         client_phone = request.data.get('phone')
-        # проверить в сериализаторе, что верный формат телефона        
+        # проверить в сериализаторе, что верный формат телефона
         client = Client.objects.filter(phone=client_phone).first()
         if not client:
             # сообщить, что пользователя с таким телефоном отсутствует
             return Response(
-                data = error_data(HTTP_STATUS_MSG[404]),
+                data=error_data(HTTP_STATUS_MSG[404]),
                 status=status.HTTP_404_NOT_FOUND
             )
         # Создание объекта UserAccountTempData
@@ -121,9 +132,9 @@ class ClientChangePasswordRequestView(BaseAPIView):
             }
         }
         return Response(
-            data = response_data,
+            data=response_data,
             status=status.HTTP_200_OK)
-    
+
 
 class ClientChangePasswordConfirmationView(BaseAPIView):
     """
@@ -143,24 +154,26 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
         new_password_confirm = request.data.get('new_password_confirm')
         if new_password != new_password_confirm:
             return Response(
-                data = error_data(HTTP_STATUS_MSG[400]),
+                data=error_data(HTTP_STATUS_MSG[400]),
                 status=status.HTTP_400_BAD_REQUEST
             )
         # получение объекта клиента из кода
-        temp_data = get_object_or_404(UserAccountTempData, temp_data_code=temp_data_code)
+        temp_data = get_object_or_404(UserAccountTempData,
+                                      temp_data_code=temp_data_code)
         client = temp_data.user
         temp_data.delete()
-        
-        # TODO: создание СМС с нужной причиной в объекте клинта и отправка на телефон 
 
-        # Создание объекта UserAccountTempData        
+        # TODO: создание СМС с нужной причиной в объекте клинта
+        # и отправка на телефон
+
+        # Создание объекта UserAccountTempData
         temp_data_obj = UserAccountTempData.objects.create(
             temp_data_code=UserAccountTempData.get_unique_data_code(),
             user=client,
             new_password=new_password
         )
         temp_data_obj.save()
-        
+
         response_data = {
             'status': 'success',
             'data': {
@@ -168,42 +181,49 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
             }
         }
         return Response(
-            data = response_data,
+            data=response_data,
             status=status.HTTP_200_OK)
 
 
 class ClientChangePasswordCompleteView(BaseAPIView):
     """
     Восстановление пароля клиента.
-    Изменяется пароль на новый и получает токен.
+    Изменяется пароль на новый.
+    Клиент получает токен.
     """
     CONFIRMATION_CODE = '0000'
+
     def patch(self, request):
         temp_data_code = request.data.get('temp_data_code')
         confimation_code = request.data.get('confimation_code')
-               
-        temp_data = get_object_or_404(UserAccountTempData, temp_data_code=temp_data_code)
+
+        temp_data = get_object_or_404(UserAccountTempData,
+                                      temp_data_code=temp_data_code)
         client = temp_data.user
-        
+
         if confimation_code != self.CONFIRMATION_CODE:
             return Response(
-                data = error_data(HTTP_STATUS_MSG[400]),
+                data=error_data(HTTP_STATUS_MSG[400]),
                 status=status.HTTP_400_BAD_REQUEST
             )
         data = {'new_password': temp_data.new_password}
-        serializer = ClientChangePasswordSerializer(client,
-                                                    data=data)
-        # ошибка в сериализаторе
-        serializer.is_valid(raise_exception=True)
+
+        serializer = ClientUpdateSerializer(client,
+                                            data=data,
+                                            partial=True)
+        serializer.is_valid()
         serializer.save()
 
         temp_data.delete()
         token, created = Token.objects.get_or_create(user=client)
 
         response_data = {
-            'phone': client.phone,
-            'fullname': client.fullname,
-            'auth_token': token.key
+            'status': 'success',
+            'data': {
+                'phone': client.phone,
+                'fullname': client.fullname,
+                'auth_token': token.key
+            }
         }
         return Response(response_data,
                         status=status.HTTP_200_OK)
@@ -249,7 +269,8 @@ class ClientProfileView(BaseAPIView):
                                             partial=True)
         serializer.is_valid(raise_exception=True)
         # получение кода подтверждения
-        confirmation_code = serializer.validated_data.pop('confirmation_code', None)
+        confirmation_code = serializer.validated_data.pop(
+            'confirmation_code', None)
         # TODO Добавить проверку кода подтверждения
         serializer.save()
         responce_serializer = ClientResponseSerializer(

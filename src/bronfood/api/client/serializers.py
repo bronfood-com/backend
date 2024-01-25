@@ -170,30 +170,34 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
         required=False,
         validators=[PasswordValidator()]
     )
-    new_password_confirm = serializers.CharField(
-        required=False,
-        validators=[PasswordValidator()]
-    )
+    # new_password_confirm = serializers.CharField(
+    #     required=False,
+    #     validators=[PasswordValidator()]
+    # )
     fullname = serializers.CharField(
         required=False,
         validators=[FullnameValidator()]
     )
-    confirmation_code = serializers.CharField(
-        write_only=True)
+    # confirmation_code = serializers.CharField(
+    #     write_only=True)
 
     class Meta:
         model = Client
-        fields = ['new_password', 'new_password_confirm', 'fullname', 'confirmation_code']
+        fields = ['new_password',
+                #   'new_password_confirm',
+                  'fullname',
+                #   'confirmation_code'
+                  ]
 
-    def validate(self, data):
-        new_password = data.get('new_password')
-        new_password_confirm = data.get('new_password_confirm')
+    # def validate(self, data):
+    #     new_password = data.get('new_password')
+    #     new_password_confirm = data.get('new_password_confirm')
 
-        if new_password or new_password_confirm:
-            if new_password != new_password_confirm:
-                raise serializers.ValidationError(
-                    'Введенные пароли не совпадают')
-        return data
+    #     if new_password or new_password_confirm:
+    #         if new_password != new_password_confirm:
+    #             raise serializers.ValidationError(
+    #                 'Введенные пароли не совпадают')
+    #     return data
 
     def update(self, instance, validated_data):
         new_password = validated_data.pop('new_password', None)
@@ -250,6 +254,7 @@ class ConfirmationSerializer(serializers.Serializer):
         write_only=True,
     )
 
+
 class ClientLoginSerializer(serializers.Serializer):
     """
     Предоставление данных после регистрации клиента.
@@ -257,3 +262,23 @@ class ClientLoginSerializer(serializers.Serializer):
     phone = serializers.CharField()
     fullname = serializers.CharField()
     auth_token = serializers.CharField()
+
+
+class ClientUpdatePasswordSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для обновления пароля клиента.
+    """
+    new_password = serializers.CharField(
+        required=False,
+        validators=[PasswordValidator()]
+    )
+
+    class Meta:
+        model = Client
+        fields = ['new_password',]
+
+    def update(self, instance, validated_data):
+        new_password = validated_data.pop('new_password', None)
+        if new_password:
+            instance.set_password(new_password)
+        return super().update(instance, validated_data)
