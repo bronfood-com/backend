@@ -17,9 +17,6 @@ class IsAuthenticatedRestaurantOwner(IsAuthenticatedConfirmedMixin):
     def has_permission(self, request, view):
         return super().has_permission() and request.user.role == 'owner'
 
-    def has_object_permission(self, request, view, obj):
-        return obj.user == request.user
-
 
 class IsAuthenticatedRestaurantAdmin(IsAuthenticatedConfirmedMixin):
     """ Класс определеня прав для администратора ресторана."""
@@ -40,6 +37,3 @@ class IsAuthenticatedClient(IsAuthenticatedConfirmedMixin):
     """ Класс определеня прав для клиента ресторана/заведения."""
     def has_permission(self, request, view):
         return super().has_permission() and request.user.role == 'client'
-
-    def has_object_permission(self, request, view, obj):
-        return obj.user == request.user
