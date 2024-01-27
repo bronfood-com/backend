@@ -1,4 +1,4 @@
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 
 from bronfood.core.client.models import Client
@@ -16,16 +16,19 @@ class PaymentRequisites(models.Model):
     )
     # restaurant_owner = ...
     card_number = models.CharField(
+        max_length=19,
         validators=[
-            MinLengthValidator(16), MaxLengthValidator(16)
+            RegexValidator(regex=r'^\d{4}\s\d{4}\s\d{4}\s\d{4}$',)
         ]
     )
-    cardholder_name = models.CharField(max_length=255)
-    expiration_data = models.CharField()
-    cvv = models.IntegerField(
-        validators=[MinValueValidator(100), MaxValueValidator(999)]
+    cardholder_name = models.CharField(
+        max_length=255,
+        validators=[RegexValidator(regex=r'^[a-zA-Z]+\s[a-zA-Z]+$')]
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    expiration_data = models.DateField()
+    cvv = models.CharField(max_length=255, validators=[
+        RegexValidator(regex=r'^\d{3}$')
+    ])
 
     def __str__(self) -> str:
         return (f'Владелец карты {self.cardholder_name}, '
