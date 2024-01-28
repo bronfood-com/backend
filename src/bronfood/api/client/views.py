@@ -25,39 +25,38 @@ from bronfood.api.views import BaseAPIView
 from bronfood.core.client.models import Client, UserAccount
 from bronfood.core.useraccount.models import UserAccountTempData
 
-from bronfood.api.client.utils import error_data
+from bronfood.api.client.utils import error_data, success_data
 
 
 CONFIRMATION_CODE = '0000'
 
 class ClientRequestRegistrationView(BaseAPIView):
     """
-    Создание объекта клиента с неподтвержденным статусом.
+    Создание клиента без подтверждения статуса.
     Формирование и отравка кода подтверждения клиенту на телефон.
     """
     serializer_class = ClientRequestRegistrationSerializer
 
     def post(self, request):
         client_serializer = self.serializer_class(data=request.data)
-        client_serializer.is_valid(raise_exception=True)
+        if not client_serializer.is_valid():
+            return Response(
+                data=error_data('Validation error'),
+                status=status.HTTP_400_BAD_REQUEST
+            )
         # Создание неподтвержденного клиента
         client_serializer.save()
         client = client_serializer.instance
 
         # Создание объекта UserAccountTempData
-        temp_data_obj = UserAccountTempData.objects.create(
-            temp_data_code=UserAccountTempData.get_unique_data_code(),
-            user=client
-        )
+        temp_data_obj = UserAccountTempData.objects.create(user=client)
         temp_data_obj.save()
 
         # TODO: создание СМС с нужной причиной в объекте клинта
         # и отправка на телефон
-        response_data = {
-            'temp_data_code': temp_data_obj.temp_data_code,
-        }
+        response_data = {'temp_data_code': temp_data_obj.temp_data_code}
         return Response(
-            data=response_data,
+            data=success_data(response_data),
             status=status.HTTP_201_CREATED)
 
 
@@ -69,15 +68,22 @@ class ClientRegistrationView(BaseAPIView):
     def post(self, request):
         temp_data_code = request.data.get('temp_data_code')
         confimation_code = request.data.get('confimation_code')
-
-        if confimation_code != CONFIRMATION_CODE:
+        if not temp_data_code or not confimation_code:
             return Response(
-                data=error_data(HTTP_STATUS_MSG[400]),
+                data=error_data('Validation error'),
                 status=status.HTTP_400_BAD_REQUEST
             )
-
-        temp_data = get_object_or_404(UserAccountTempData,
-                                      temp_data_code=temp_data_code)
+        if confimation_code != CONFIRMATION_CODE:
+            return Response(
+                data=error_data('Invalid_confimation_code'),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        temp_data = UserAccountTempData.get_object(temp_data_code)
+        if not temp_data:
+            return Response(
+                data=error_data('Temp_data_error'),
+                status=status.HTTP_400_BAD_REQUEST
+            )
         client = temp_data.user
 
         # TODO: добавить проверку кода подтверждения у клиента.
@@ -95,8 +101,9 @@ class ClientRegistrationView(BaseAPIView):
             'fullname': client.fullname,
             'auth_token': token.key
         }
-        return Response(response_data,
-                        status=status.HTTP_200_OK)
+        return Response(
+            data=success_data(response_data),
+            status=status.HTTP_201_CREATED)
 
 
 class ClientChangePasswordRequestView(BaseAPIView):
