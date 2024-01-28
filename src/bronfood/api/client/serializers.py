@@ -345,6 +345,7 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
         validators=[PasswordValidator()]
     )
     phone = serializers.CharField(
+        required=False,
         validators=[KazakhstanPhoneNumberValidator()]
     )
     fullname = serializers.CharField(

@@ -20,14 +20,14 @@ from bronfood.api.views import healthcheck
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from bronfood.api.client.views import CustomTokenCreateView
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('healthcheck/', healthcheck),
     path('client/', include('bronfood.api.client.urls', namespace='client')),
-    # path(r'^auth/', include('djoser.urls')),
-    # re_path(r'^auth/', include('djoser.urls.authtoken')),
+    re_path(r"^signin/?$", CustomTokenCreateView.as_view(), name="signin"),
 ]
 
 

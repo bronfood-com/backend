@@ -2,7 +2,7 @@ from django.urls import path, re_path
 from djoser.views import TokenDestroyView
 
 from .views import (
-                    # ClientChangePasswordCompleteView,
+                    ClientChangePasswordCompleteView,
                     ClientProfileView,
                     ClientRegistrationView,
                     CustomTokenCreateView,
@@ -24,23 +24,20 @@ urlpatterns = [
     path('change_password/request/',  # запрос на смену пароля
          ClientChangePasswordRequestView.as_view(),
          name='change_password_request'),
-    path('change_password/confirmation/', # подтверждение
+    path('change_password/confirmation/', # внесение данных о новом пароле
          ClientChangePasswordConfirmationView.as_view(),
          name='change_password_confirmation'),
-     # path('change_password/complete/',
-     #     ClientChangePasswordCompleteView.as_view(),
-     #     name='change_password_compelete'),
-     path('profile/update_request/',
+     path('change_password/complete/', # подтверждение смены пароля
+         ClientChangePasswordCompleteView.as_view(),
+         name='change_password_compelete'),
+     path('profile/update_request/',  # внесение данных в профиль клиента
           ClientRequestProfileUpdateView.as_view(),
-          name='profile_update_request'),
+          name='profile_update_request'),  # подстверждение изменения профиля клиента
      path('profile/', ClientProfileView.as_view(), name='profile'),
-     # path('change_password/',
-     #     ClientChangePasswordCompleteView.as_view(),
-     #     name='change_password'),
 ]
 
 # Token
 urlpatterns += [
     re_path(r"^signout/?$", TokenDestroyView.as_view(), name="signout"),
-    re_path(r"^signin/?$", CustomTokenCreateView.as_view(), name="signin"),
+#     re_path(r"^signin/?$", CustomTokenCreateView.as_view(), name="signin"),
 ]
