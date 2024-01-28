@@ -15,7 +15,7 @@ from bronfood.api.client.serializers import (
     # ClientChangePasswordRequestSerializer, ClientChangePasswordSerializer,
     ClientLoginSerializer, ClientResponseSerializer,
     # ClientSerializer,
-    # ClientUpdateSerializer,
+    ClientUpdateSerializer,
     ConfirmationSerializer,
     ClientDataToProfileSerializer,
     ClientRequestRegistrationSerializer,
@@ -255,39 +255,42 @@ class ClientProfileView(BaseAPIView):
                         status=status.HTTP_200_OK)
 
 
-    # def patch(self, request):
-    #     temp_data_code = request.data.get('temp_data_code')
-    #     confimation_code = request.data.get('confimation_code')
+    def patch(self, request):
+        confimation_code = request.data.get('confimation_code')
 
-    #     temp_data = get_object_or_404(UserAccountTempData,
-    #                                   temp_data_code=temp_data_code)
-    #     client = temp_data.user
+        error_message = None
+        if confimation_code != CONFIRMATION_CODE:
+            error_message = 'Invalid_confimation_code'
 
-    #     if confimation_code != CONFIRMATION_CODE:
-    #         return Response(
-    #             data=error_data(HTTP_STATUS_MSG[400]),
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
+        temp_data = UserAccountTempData.objects.filter(
+            user=self.current_client.id).first()
 
-    #     data = {}
-    #     if temp_data.password:
-    #         data['new_password'] = temp_data.password
-    #     # if temp_data.new_phone:
-    #     #     data['new_phone'] = temp_data.new_phone
-    #     if temp_data.fullname:
-    #         data['new_fullname'] = temp_data.fullname
+        if not temp_data:
+            error_message = 'Temp_data_error'
 
-    #     serializer = ClientUpdateSerializer(self.current_client,
-    #                                         data=data,
-    #                                         partial=True)
-    #     serializer.is_valid()
-    #     serializer.save()
-    #     responce_serializer = ClientResponseSerializer(
-    #         data={'phone': self.current_client.phone,
-    #               'fullname': self.current_client.fullname}
-    #     )
-    #     return Response(responce_serializer.initial_data,
-    #                     status=status.HTTP_200_OK)
+        if error_message:
+            return Response(
+                data=error_data(error_message),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Преобразуем объект temp_data в словарь с использованием сериализатора
+        temp_data_serializer = TempDataSerializer(temp_data)
+        data = temp_data_serializer.data
+        data.pop('user')
+
+        # Обновляем данные у текущего клиента
+        serializer = ClientUpdateSerializer(self.current_client,
+                                            data=data,
+                                            partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            temp_data.delete()
+            return Response(success_data({'message': 'Profile updated successfully'}),
+                            status=status.HTTP_200_OK)
+        else:
+            return Response(data=error_data('Validation error'),
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class ClientRequestProfileUpdateView(BaseAPIView):
