@@ -1,25 +1,14 @@
-from django.contrib.auth import authenticate, login
-from django.shortcuts import get_object_or_404
 from djoser import utils
 from djoser.conf import settings
 from djoser.views import TokenCreateView
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from bronfood.api.client.serializers import (
-    # ClientChangePasswordConfirmationSerializer,
-    # ClientChangePasswordRequestSerializer, ClientChangePasswordSerializer,
-    ClientLoginSerializer, ClientResponseSerializer,
-    # ClientSerializer,
     ClientUpdateSerializer,
-    ConfirmationSerializer,
-    ClientDataToProfileSerializer,
     ClientRequestRegistrationSerializer,
-    # ClientUpdatePasswordSerializer,
     TempDataSerializer
 )
 from bronfood.api.constants import HTTP_STATUS_MSG
@@ -321,15 +310,6 @@ class CustomTokenCreateView(TokenCreateView):
     """
     Custom token creation view with additional data.
     """
-    @swagger_auto_schema(
-        tags=['client'],
-        operation_summary='Login',
-        request_body=ClientResponseSerializer(),
-        responses={
-            status.HTTP_201_CREATED: ClientLoginSerializer(),
-            status.HTTP_400_BAD_REQUEST: HTTP_STATUS_MSG[400],
-        }
-    )
     def _action(self, serializer):
         token = utils.login_user(self.request, serializer.user)
         token_serializer_class = settings.SERIALIZERS.token
