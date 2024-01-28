@@ -334,3 +334,32 @@ class ClientUpdatePasswordSerializer(serializers.ModelSerializer):
         if new_password:
             instance.set_password(new_password)
         return super().update(instance, validated_data)
+
+
+class ClientUpdateSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для обновления профиля клиента.
+    """
+    password = serializers.CharField(
+        required=False,
+        validators=[PasswordValidator()]
+    )
+    phone = serializers.CharField(
+        validators=[KazakhstanPhoneNumberValidator()]
+    )
+    fullname = serializers.CharField(
+        required=False,
+        validators=[FullnameValidator()]
+    )
+
+    class Meta:
+        model = Client
+        fields = ['password', 
+                  'phone',
+                  'fullname']
+
+    def update(self, instance, validated_data):
+        new_password = validated_data.pop('password', None)
+        if new_password:
+            instance.set_password(new_password)
+        return super().update(instance, validated_data)
