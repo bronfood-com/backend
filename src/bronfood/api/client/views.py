@@ -15,10 +15,12 @@ from bronfood.api.client.serializers import (
     # ClientChangePasswordRequestSerializer, ClientChangePasswordSerializer,
     ClientLoginSerializer, ClientResponseSerializer,
     # ClientSerializer,
-    ClientUpdateSerializer, ConfirmationSerializer,
+    # ClientUpdateSerializer,
+    ConfirmationSerializer,
     ClientDataToProfileSerializer,
     ClientRequestRegistrationSerializer,
-    # ClientUpdatePasswordSerializer
+    # ClientUpdatePasswordSerializer,
+    TempDataSerializer
 )
 from bronfood.api.constants import HTTP_STATUS_MSG
 from bronfood.api.views import BaseAPIView
@@ -66,31 +68,31 @@ class ClientRegistrationView(BaseAPIView):
     """
 
     def post(self, request):
+        # TODO настроить обработку сериалайзером
         temp_data_code = request.data.get('temp_data_code')
         confimation_code = request.data.get('confimation_code')
+        error_message = None
         if not temp_data_code or not confimation_code:
-            return Response(
-                data=error_data('Validation error'),
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            error_message = 'Validation error'
         if confimation_code != CONFIRMATION_CODE:
-            return Response(
-                data=error_data('Invalid_confimation_code'),
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            error_message = 'Invalid_confimation_code'
+
         temp_data = UserAccountTempData.get_object(temp_data_code)
         if not temp_data:
+            error_message = 'Temp_data_error'
+
+        if error_message:
             return Response(
-                data=error_data('Temp_data_error'),
+                data=error_data(error_message),
                 status=status.HTTP_400_BAD_REQUEST
             )
+
         client = temp_data.user
 
         # TODO: добавить проверку кода подтверждения у клиента.
         # если есть активный код подтверждения у клиента
         # если причина создания кода подтверждения - регистрация
         # то осуществляю аутентификацию и перевод клиента в активный статус
-
         client.status = UserAccount.Status.CONFIRMED
         client.save(update_fields=['status', ])
         temp_data.delete()
@@ -193,47 +195,47 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
             status=status.HTTP_200_OK)
 
 
-class ClientChangePasswordCompleteView(BaseAPIView):
-    """
-    Восстановление пароля клиента.
-    Изменяется пароль на новый.
-    Клиент получает токен.
-    """
+# class ClientChangePasswordCompleteView(BaseAPIView):
+#     """
+#     Восстановление пароля клиента.
+#     Изменяется пароль на новый.
+#     Клиент получает токен.
+#     """
 
-    def patch(self, request):
-        temp_data_code = request.data.get('temp_data_code')
-        confimation_code = request.data.get('confimation_code')
+#     def patch(self, request):
+#         temp_data_code = request.data.get('temp_data_code')
+#         confimation_code = request.data.get('confimation_code')
 
-        temp_data = get_object_or_404(UserAccountTempData,
-                                      temp_data_code=temp_data_code)
-        client = temp_data.user
+#         temp_data = get_object_or_404(UserAccountTempData,
+#                                       temp_data_code=temp_data_code)
+#         client = temp_data.user
 
-        if confimation_code != CONFIRMATION_CODE:
-            return Response(
-                data=error_data(HTTP_STATUS_MSG[400]),
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        data = {'new_password': temp_data.new_password}
+#         if confimation_code != CONFIRMATION_CODE:
+#             return Response(
+#                 data=error_data(HTTP_STATUS_MSG[400]),
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+#         data = {'new_password': temp_data.password}
 
-        serializer = ClientUpdateSerializer(client,
-                                            data=data,
-                                            partial=True)
-        serializer.is_valid()
-        serializer.save()
+#         serializer = ClientUpdateSerializer(client,
+#                                             data=data,
+#                                             partial=True)
+#         serializer.is_valid()
+#         serializer.save()
 
-        temp_data.delete()
-        token, created = Token.objects.get_or_create(user=client)
+#         temp_data.delete()
+#         token, created = Token.objects.get_or_create(user=client)
 
-        response_data = {
-            'status': 'success',
-            'data': {
-                'phone': client.phone,
-                'fullname': client.fullname,
-                'auth_token': token.key
-            }
-        }
-        return Response(response_data,
-                        status=status.HTTP_200_OK)
+#         response_data = {
+#             'status': 'success',
+#             'data': {
+#                 'phone': client.phone,
+#                 'fullname': client.fullname,
+#                 'auth_token': token.key
+#             }
+#         }
+#         return Response(response_data,
+#                         status=status.HTTP_200_OK)
 
 
 class ClientProfileView(BaseAPIView):
@@ -246,49 +248,46 @@ class ClientProfileView(BaseAPIView):
 
     def get(self, request):
         response_data = {
-            'status': 'success',
-            'data': {
-                'phone': self.current_client.phone,
-                'fullname': self.current_client.fullname,
-            }
+            'phone': self.current_client.phone,
+            'fullname': self.current_client.fullname,
         }
-        return Response(response_data,
+        return Response(success_data(response_data),
                         status=status.HTTP_200_OK)
 
 
-    def patch(self, request):
-        temp_data_code = request.data.get('temp_data_code')
-        confimation_code = request.data.get('confimation_code')
+    # def patch(self, request):
+    #     temp_data_code = request.data.get('temp_data_code')
+    #     confimation_code = request.data.get('confimation_code')
 
-        temp_data = get_object_or_404(UserAccountTempData,
-                                      temp_data_code=temp_data_code)
-        client = temp_data.user
+    #     temp_data = get_object_or_404(UserAccountTempData,
+    #                                   temp_data_code=temp_data_code)
+    #     client = temp_data.user
 
-        if confimation_code != CONFIRMATION_CODE:
-            return Response(
-                data=error_data(HTTP_STATUS_MSG[400]),
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    #     if confimation_code != CONFIRMATION_CODE:
+    #         return Response(
+    #             data=error_data(HTTP_STATUS_MSG[400]),
+    #             status=status.HTTP_400_BAD_REQUEST
+    #         )
 
-        data = {}
-        if temp_data.new_password:
-            data['new_password'] = temp_data.new_password
-        # if temp_data.new_phone:
-        #     data['new_phone'] = temp_data.new_phone
-        if temp_data.new_fullname:
-            data['new_fullname'] = temp_data.new_fullname
+    #     data = {}
+    #     if temp_data.password:
+    #         data['new_password'] = temp_data.password
+    #     # if temp_data.new_phone:
+    #     #     data['new_phone'] = temp_data.new_phone
+    #     if temp_data.fullname:
+    #         data['new_fullname'] = temp_data.fullname
 
-        serializer = ClientUpdateSerializer(self.current_client,
-                                            data=data,
-                                            partial=True)
-        serializer.is_valid()
-        serializer.save()
-        responce_serializer = ClientResponseSerializer(
-            data={'phone': self.current_client.phone,
-                  'fullname': self.current_client.fullname}
-        )
-        return Response(responce_serializer.initial_data,
-                        status=status.HTTP_200_OK)
+    #     serializer = ClientUpdateSerializer(self.current_client,
+    #                                         data=data,
+    #                                         partial=True)
+    #     serializer.is_valid()
+    #     serializer.save()
+    #     responce_serializer = ClientResponseSerializer(
+    #         data={'phone': self.current_client.phone,
+    #               'fullname': self.current_client.fullname}
+    #     )
+    #     return Response(responce_serializer.initial_data,
+    #                     status=status.HTTP_200_OK)
 
 
 class ClientRequestProfileUpdateView(BaseAPIView):
@@ -298,40 +297,26 @@ class ClientRequestProfileUpdateView(BaseAPIView):
     Отправка СМС с кодом подтверждения.
     Требует авторизации.
     """
+    serializer_class = TempDataSerializer
 
     def post(self, request):
-        data = {}
-        if 'new_phone' in request.data:
-            data['new_phone'] = request.data['new_phone']
-
-        if 'new_fullname' in request.data:
-            data['new_fullname'] = request.data['new_fullname']
-
-        if 'new_password' in request.data:
-            if request.data['new_password'] != request.data['new_password_confirm']:
-                return Response(
-                    data=error_data(HTTP_STATUS_MSG[400]),
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            data['new_password'] = request.data['new_password']
-        
-        # Проверяем наличие объекта UserAccountTempData с атрибутом user равным self.current_client
-        existing_temp_data = UserAccountTempData.objects.filter(
-            user=self.current_client).first()
-        if existing_temp_data:
-            existing_temp_data.delete()  # Удаляем объект, если он существует
-
-        temp_data_obj = UserAccountTempData.objects.create(
-            temp_data_code=UserAccountTempData.get_unique_data_code(),
-            user=self.current_client,
-            **data
+        data = request.data
+        data['user'] = self.current_client.id
+        temp_data_serializer = self.serializer_class(
+            data=data
         )
-        temp_data_obj.save()
+        if not temp_data_serializer.is_valid():
+            return Response(
+                data=error_data('Validation error'),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Создание временных данных
+        temp_data_serializer.save()
 
         response_data = {
             'status': 'success',
             'data': {
-                'temp_data_code': temp_data_obj.temp_data_code
+                'temp_data_code': temp_data_serializer.instance.temp_data_code
             }
         }
         return Response(response_data,

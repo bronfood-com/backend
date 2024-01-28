@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 
 from bronfood.core.client.models import Client
+from bronfood.core.useraccount.models import UserAccountTempData, UserAccount
 from bronfood.core.useraccount.validators import (
     ConfirmationValidator, FullnameValidator, KazakhstanPhoneNumberValidator,
     PasswordValidator)
@@ -40,6 +41,46 @@ class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
             user.set_password(password)
             user.save(update_fields=['password'])
         return user
+    
+    def validate_phone(self, value):
+        if Client.objects.filter(phone=value).exists():
+            raise serializers.ValidationError("Phone is already exists.")
+        return value
+
+
+class ClientProfileUpdateSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для обновления объекта клиента.
+    """
+    new_password = serializers.CharField(
+        required=False,
+        validators=[PasswordValidator()]
+    )
+    new_password_confirm = serializers.CharField(
+        required=False,
+        validators=[PasswordValidator()]
+    )
+    new_fullname = serializers.CharField(
+        required=False,
+        validators=[FullnameValidator()]
+    )
+    new_phone = serializers.CharField(
+        validators=[KazakhstanPhoneNumberValidator()]
+    )
+
+    class Meta:
+        model = Client
+        fields = ['new_password', 'new_password_confirm', 'new_fullname']
+
+    def validate(self, data):
+        new_password = data.get('new_password')
+        new_password_confirm = data.get('new_password_confirm')
+
+        if new_password or new_password_confirm:
+            if new_password != new_password_confirm:
+                raise serializers.ValidationError(
+                    'Введенные пароли не совпадают')
+        return data
 
 
 class ClientChangePasswordRequestSerializer(serializers.Serializer):
@@ -147,9 +188,13 @@ class ClientDataToProfileSerializer(serializers.ModelSerializer):
         required=False,
         validators=[FullnameValidator()]
     )
+    phone = serializers.CharField(
+        required=False,
+        validators=[KazakhstanPhoneNumberValidator()]
+    )
 
     class Meta:
-        model = Client
+        model = UserAccountTempData
         fields = ['new_password', 'new_password_confirm', 'fullname']
 
     def validate(self, data):
@@ -163,49 +208,55 @@ class ClientDataToProfileSerializer(serializers.ModelSerializer):
         return data
 
 
-class ClientUpdateSerializer(serializers.ModelSerializer):
+class TempDataSerializer(serializers.ModelSerializer):
     """
     Сериализатор для обновления объекта клиента.
     """
-    new_password = serializers.CharField(
+    password = serializers.CharField(
         required=False,
         validators=[PasswordValidator()]
     )
-    # new_password_confirm = serializers.CharField(
-    #     required=False,
-    #     validators=[PasswordValidator()]
-    # )
+    password_confirm = serializers.CharField(
+        required=False,
+        validators=[PasswordValidator()]
+    )
     fullname = serializers.CharField(
         required=False,
         validators=[FullnameValidator()]
     )
-    # confirmation_code = serializers.CharField(
-    #     write_only=True)
+    phone = serializers.CharField(
+        required=False,
+        validators=[KazakhstanPhoneNumberValidator()]
+    )
+    user = serializers.PrimaryKeyRelatedField(
+        queryset=UserAccount.objects.all(),
+        required=True)
+
 
     class Meta:
-        model = Client
-        fields = ['new_password',
-                #   'new_password_confirm',
+        model = UserAccountTempData
+        fields = ['password',
+                  'password_confirm',
                   'fullname',
-                #   'confirmation_code'
+                  'phone',
+                  'user'
                   ]
 
-    # def validate(self, data):
-    #     new_password = data.get('new_password')
-    #     new_password_confirm = data.get('new_password_confirm')
+    def validate(self, data):
+        password = data.get('password')
+        password_confirm = data.get('password_confirm')
 
-    #     if new_password or new_password_confirm:
-    #         if new_password != new_password_confirm:
-    #             raise serializers.ValidationError(
-    #                 'Введенные пароли не совпадают')
-    #     return data
+        if password or password_confirm:
+            if password != password_confirm:
+                raise serializers.ValidationError(
+                    'Рasswords do not match')
+        if Client.objects.filter(phone=data.get('phone')).exists():
+            raise serializers.ValidationError(
+                    'Phone number exist'
+            )
+        password_confirm = data.pop('password_confirm')
+        return data
 
-    def update(self, instance, validated_data):
-        new_password = validated_data.pop('new_password', None)
-        if new_password:
-            instance.set_password(new_password)
-        return super().update(instance, validated_data)
-    
 
 class ClientLoginSerializer(serializers.Serializer):
     """

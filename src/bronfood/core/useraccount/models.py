@@ -88,7 +88,7 @@ class UserAccountTempData(models.Model):
     temp_data_code = models.CharField(
         max_length=TEMP_DATA_CODE_LENGTH,
     )
-    new_password = models.CharField(
+    password = models.CharField(
         max_length=128,
         null=True)
     user = models.OneToOneField(
@@ -99,12 +99,12 @@ class UserAccountTempData(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True
     )
-    new_fullname = models.CharField(
+    fullname = models.CharField(
         max_length=40,
         validators=[FullnameValidator],
         null=True
     )
-    new_phone = models.CharField(
+    phone = models.CharField(
         max_length=18,
         validators=[KazakhstanPhoneNumberValidator],
         null=True
