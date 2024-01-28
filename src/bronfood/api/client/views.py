@@ -146,7 +146,7 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
             temp_data_code=request.data.get('temp_data_code'))
         if not temp_data_obj:
             return Response(
-                data=error_data('Temp_data_error'),
+                data=error_data('Validation error'),
                 status=status.HTTP_400_BAD_REQUEST
             )
         client_id = temp_data_obj.user.id
@@ -186,13 +186,13 @@ class ClientChangePasswordCompleteView(BaseAPIView):
 
         error_message = None
         if confimation_code != CONFIRMATION_CODE:
-            error_message = 'Invalid_confimation_code'
+            error_message = 'Validation error'
 
         temp_data_obj = UserAccountTempData.get_object(
             temp_data_code=request.data.get('temp_data_code'))
 
         if not temp_data_obj:
-            error_message = 'Temp_data_error'
+            error_message = 'Validation error'
 
         if error_message:
             return Response(
@@ -242,13 +242,13 @@ class ClientProfileView(BaseAPIView):
 
         error_message = None
         if confimation_code != CONFIRMATION_CODE:
-            error_message = 'Invalid_confimation_code'
+            error_message = 'Validation error'
 
         temp_data = UserAccountTempData.objects.filter(
             user=self.current_client.id).first()
 
         if not temp_data:
-            error_message = 'Temp_data_error'
+            error_message = 'Validation error'
 
         if error_message:
             return Response(
