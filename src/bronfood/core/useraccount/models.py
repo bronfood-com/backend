@@ -123,5 +123,23 @@ class UserAccountTempData(models.Model):
             return rand_string
         return cls.get_unique_data_code()
     
+    @classmethod
+    def get_object(cls, temp_data_code):
+        """
+        получение объекта хранения данных по коду.
+        """
+        try:
+            temp_data_obj = UserAccountTempData.objects.get(
+                temp_data_code=temp_data_code)
+            return temp_data_obj
+        except cls.DoesNotExist:
+            temp_data_obj = None
+            return temp_data_obj
+
+    def save(self, *args, **kwargs):
+        if not self.temp_data_code:
+            self.temp_data_code = self.get_unique_data_code()
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return self.temp_data_code

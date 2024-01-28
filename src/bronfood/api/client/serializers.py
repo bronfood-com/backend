@@ -41,6 +41,7 @@ class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
             user.save(update_fields=['password'])
         return user
 
+
 class ClientChangePasswordRequestSerializer(serializers.Serializer):
     """
     Запрос на смену пароля.
