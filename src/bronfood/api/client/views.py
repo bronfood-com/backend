@@ -112,38 +112,31 @@ class ClientChangePasswordRequestView(BaseAPIView):
     """
     Клиент делает запрос на смену пароля.
     Отправляет телефон.
-    Выполняются проверки:
-    - валидности формата телефона.
-    - наличия клиента с таким телефоном.
     Вовращает уникальный код, связанный с объектом клиента.
     """
     # TODO: проверить как у владельца осуществляется восстановление пароля.
-
     def post(self, request):
         client_phone = request.data.get('phone')
         # проверить в сериализаторе, что верный формат телефона
         client = Client.objects.filter(phone=client_phone).first()
+        
         if not client:
-            # сообщить, что пользователя с таким телефоном отсутствует
             return Response(
-                data=error_data(HTTP_STATUS_MSG[404]),
+                data=error_data('Phone not found'),
                 status=status.HTTP_404_NOT_FOUND
             )
+
         # Создание объекта UserAccountTempData
         temp_data_obj = UserAccountTempData.objects.create(
             temp_data_code=UserAccountTempData.get_unique_data_code(),
             user=client
         )
         temp_data_obj.save()
-        response_data = {
-            'status': 'success',
-            'data': {
-                'temp_data_code': temp_data_obj.temp_data_code
-            }
-        }
+        response_data = {'temp_data_code': temp_data_obj.temp_data_code}
         return Response(
-            data=response_data,
-            status=status.HTTP_200_OK)
+            data=success_data(response_data),
+            status=status.HTTP_200_OK
+        )
 
 
 class ClientChangePasswordConfirmationView(BaseAPIView):
@@ -154,45 +147,43 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
     - пароль и повторный пароль совпадают.
     Предложенный пароль временно сохраняется в бд.
     Формируется, сохраняется в бд и направляется клиенту код подтверждения.
-    Вовращает id клиента.
     """
     # TODO: проверить как у владельца осуществляется восстановление пароля.
+    serializer_class = TempDataSerializer
 
     def post(self, request):
-        temp_data_code = request.data.get('temp_data_code')
-        new_password = request.data.get('new_password')
-        new_password_confirm = request.data.get('new_password_confirm')
-        if new_password != new_password_confirm:
+        
+        temp_data_obj = UserAccountTempData.get_object(
+            temp_data_code=request.data.get('temp_data_code'))
+        if not temp_data_obj:
             return Response(
-                data=error_data(HTTP_STATUS_MSG[400]),
+                data=error_data('Temp_data_error'),
                 status=status.HTTP_400_BAD_REQUEST
             )
-        # получение объекта клиента из кода
-        temp_data = get_object_or_404(UserAccountTempData,
-                                      temp_data_code=temp_data_code)
-        client = temp_data.user
-        temp_data.delete()
+        client_id = temp_data_obj.user.id
+        temp_data_obj.delete()
+
+        data = request.data
+        data['user'] = client_id
+        temp_data_serializer = self.serializer_class(
+            data=data
+        )
+        if not temp_data_serializer.is_valid():
+            return Response(
+                data=error_data('Validation error'),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Создание временных данных
+        temp_data_serializer.save()
 
         # TODO: создание СМС с нужной причиной в объекте клинта
         # и отправка на телефон
 
-        # Создание объекта UserAccountTempData
-        temp_data_obj = UserAccountTempData.objects.create(
-            temp_data_code=UserAccountTempData.get_unique_data_code(),
-            user=client,
-            new_password=new_password
-        )
-        temp_data_obj.save()
-
-        response_data = {
-            'status': 'success',
-            'data': {
-                'temp_data_code': temp_data_obj.temp_data_code
-            }
-        }
+        response_data = {'temp_data_code': temp_data_obj.temp_data_code}
         return Response(
-            data=response_data,
-            status=status.HTTP_200_OK)
+            data=success_data(response_data),
+            status=status.HTTP_200_OK
+        )
 
 
 # class ClientChangePasswordCompleteView(BaseAPIView):
