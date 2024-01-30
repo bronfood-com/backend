@@ -25,7 +25,11 @@ class PaymentRequisites(models.Model):
         max_length=255,
         validators=[RegexValidator(regex=r'^[a-zA-Z]+\s[a-zA-Z]+$')]
     )
-    expiration_data = models.DateField()
+    expiration_date = models.CharField(max_length=255, validators=[
+        RegexValidator(
+            regex=r'^\d{2}/\d{2}$'
+        )
+    ])
     cvv = models.CharField(max_length=255, validators=[
         RegexValidator(regex=r'^\d{3}$')
     ])
