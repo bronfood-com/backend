@@ -25,7 +25,8 @@ class PhoneSmsOtpVerificationTest(TestCase):
             'sms_status': 'Sms status',
             'issue_reason': 'Code issuance status',
             'created_at': 'Created at',
-            'expired_at': 'Expired at'
+            'expired_at': 'Expired at',
+            'attempt_counter': 'Attempt counter'
         }
         for field, expected in field_verbose.items():
             with self.subTest(field=field):

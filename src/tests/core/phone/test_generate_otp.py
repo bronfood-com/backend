@@ -48,7 +48,9 @@ class GenerateOTPTest(TestCase):
             SmsMessage.REGISTRATION
         )
         self.assertEqual(
-            validate_otp_verification(GenerateOTPTest.user, otp.code), True,
+            validate_otp_verification(
+                GenerateOTPTest.user, IssueReason.REGISTRATION, otp.code
+            ), True,
             'В случае успешной валидации ожидаемый возврат: True.'
         )
         self.assertEqual(
@@ -56,13 +58,46 @@ class GenerateOTPTest(TestCase):
             SmsStatus.ACCEPTED,
             'После успешной валидации статус OTP кода меняется на ACCEPTED.'
         )
+        new_otp = create_otp_verification(
+            GenerateOTPTest.user, IssueReason.REGISTRATION,
+            SmsMessage.REGISTRATION
+        )
         with self.assertRaises(
             WrongOtpCode, msg='Ожидается исключение при неверном OTP коде.'
-        ):
-            validate_otp_verification(GenerateOTPTest.user, '0000')
-
+        ) as error:
+            for attempt in range(3):
+                try:
+                    validate_otp_verification(
+                        GenerateOTPTest.user, IssueReason.REGISTRATION, '0000'
+                    )
+                except Exception as e:
+                    if attempt == 2:
+                        raise e
+        self.assertEqual(
+            error.exception.message,
+            'Code: 0000 is not as expected. Attempts left: 0.',
+            'Неверное сообщение об ошибке после 3 попыток ввода.'
+        )
+        self.assertEqual(
+            PhoneSmsOtpVerification.objects.get(id=new_otp.id).sms_status,
+            SmsStatus.DECLINED,
+            'После 3 попыток ввода статус OTP кода меняется на DECLINED.'
+        )
+        with self.assertRaises(
+            WrongOtpCode,
+            msg='Ожидается исключение, если OTP код не найден или отклонён.'
+        ) as error:
+            validate_otp_verification(
+                GenerateOTPTest.user, IssueReason.REGISTRATION, '0000'
+            )
+        self.assertEqual(
+            error.exception.message,
+            'There was no otp issued for this number or it was rejected.',
+            'Неверное сообщение об ошибке, '
+            'если OTP код не найден или отклонён.'
+        )
         with self.assertRaises(
             TypeError,
             msg='Ожидается исключение при аргументах с неверным типом данных.'
         ):
-            validate_otp_verification(None, None)
+            validate_otp_verification(None, None, None)
