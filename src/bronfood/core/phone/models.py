@@ -61,8 +61,10 @@ class PhoneSmsOtpVerification(models.Model):
         verbose_name='Created at', auto_now_add=True
     )
     expired_at = models.DateTimeField(
-        verbose_name='Expired at',
-        default=in_one_hour
+        verbose_name='Expired at', default=in_one_hour
+    )
+    attempt_counter = models.PositiveSmallIntegerField(
+        verbose_name='Attempt counter', default=3
     )
 
     class Meta:
