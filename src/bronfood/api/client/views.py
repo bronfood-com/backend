@@ -59,12 +59,12 @@ class ClientRegistrationView(BaseAPIView):
     def post(self, request):
         # TODO настроить обработку сериалайзером
         temp_data_code = request.data.get('temp_data_code')
-        confimation_code = request.data.get('confimation_code')
+        confirmation_code = request.data.get('confirmation_code')
         error_message = None
-        if not temp_data_code or not confimation_code:
+        if not temp_data_code or not confirmation_code:
             error_message = 'Validation error'
-        if confimation_code != CONFIRMATION_CODE:
-            error_message = 'Invalid_confimation_code'
+        if confirmation_code != CONFIRMATION_CODE:
+            error_message = 'Invalid_confirmation_code'
 
         temp_data = UserAccountTempData.get_object(temp_data_code)
         if not temp_data:
@@ -182,10 +182,10 @@ class ClientChangePasswordCompleteView(BaseAPIView):
     """
 
     def patch(self, request):
-        confimation_code = request.data.get('confimation_code')
+        confirmation_code = request.data.get('confirmation_code')
 
         error_message = None
-        if confimation_code != CONFIRMATION_CODE:
+        if confirmation_code != CONFIRMATION_CODE:
             error_message = 'Validation error'
 
         temp_data_obj = UserAccountTempData.get_object(
@@ -238,10 +238,10 @@ class ClientProfileView(BaseAPIView):
 
 
     def patch(self, request):
-        confimation_code = request.data.get('confimation_code')
+        confirmation_code = request.data.get('confirmation_code')
 
         error_message = None
-        if confimation_code != CONFIRMATION_CODE:
+        if confirmation_code != CONFIRMATION_CODE:
             error_message = 'Validation error'
 
         temp_data = UserAccountTempData.objects.filter(
