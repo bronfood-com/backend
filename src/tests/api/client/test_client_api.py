@@ -26,6 +26,14 @@ class ClientApiTests(APITestCase):
         # Создадим токен для авторизации
         cls.token = Token.objects.create(user=user)
 
+        # Запись о клиенте для логина
+        cls.data_to_signin = {'password': 'password',
+                              'phone': '7000000000',
+                              'fullname': 'New client'}
+        serializer = ClientRequestRegistrationSerializer(
+            data=cls.data_to_signin)
+        serializer.is_valid()
+        serializer.save()
 
     def setUp(self):
         # Создаем неавторизованый клиент
@@ -253,21 +261,45 @@ class ClientApiTests(APITestCase):
                          "Token should not exist after signout")
 
 
-    def test_client_login(self):
+    def test_signin(self):
         """
-        Ensure loggin client.
+        Ensure signin client.
         """
-        url = reverse('client:signin')
-        # Проверяем, что до регистрации отсутствует сессия
-        self.assertNotIn('_auth_user_id', self.guest.session)
+        url = reverse('signin')
+
         # обращение клиента за авторизацией
-        response = self.guest.post(url,
-                                   data={'phone': '7000000002',
-                                         'password': 'password'},
-                                   format='json')
+        response = self.guest.post(
+            url,
+            data={'phone': self.data_to_signin['phone'],
+                  'password': self.data_to_signin['password']},
+            format='json'
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Проверяем, что после логирования сессия установлена
-        self.assertIn('_auth_user_id', self.guest.session)
+        
+        client = Client.objects.get(phone=self.data_to_signin['phone'])
+        token = Token.objects.filter(user=client).first()
+        expected_data = {
+            'status': 'success',
+            'data': {
+                'auth_token': token.key,
+                'fullname': self.data_to_signin['fullname'],
+                'phone': self.data_to_signin['phone'],
+                'role': 'CLIENT'
+            }
+        }
+        self.assertEqual(response.data,
+                         expected_data,
+                         'Response data error')
+        
+        # некорректное обращение
+        response = self.guest.post(
+            url,
+            data={'phone': self.data_to_signin['phone'],
+                  'password': 'wrong_password'},
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
     def test_change_password_request(self):
         """
