@@ -1,9 +1,7 @@
 # custom auth_backends.py
 
 from django.contrib.auth.backends import BaseBackend
-# from .models import CustomUser
-from bronfood.core.client.models import Client
-# from bronfood.core.restaurant_owner.models import 
+from .models import CustomUser
 
 
 class PhoneBackend(BaseBackend):
