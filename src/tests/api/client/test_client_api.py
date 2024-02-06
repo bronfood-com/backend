@@ -16,27 +16,34 @@ class ClientApiTests(APITestCase):
     def setUpClass(cls):
         super().setUpClass()
         
-        # Создадим запись в БД
-        cls.data = {'password': 'password',
-                    'phone': '7000000002',
-                    'fullname': 'Client in DB'}
-        serializer = ClientRequestRegistrationSerializer(data=cls.data)
+
+        # Данные для авторизованного и активированного клиента 
+        cls.data_authorized_client = {
+            'password': 'password',
+            'phone': '7000000002',
+            'fullname': 'Client in DB'}
+        serializer = ClientRequestRegistrationSerializer(
+            data=cls.data_authorized_client)
         serializer.is_valid()
         user = serializer.save()
+        # подтвержденный статус
+        user.status = UserAccount.Status.CONFIRMED
         # Создадим токен для авторизации
         cls.token = Token.objects.create(user=user)
 
-        # Запись о клиенте для логина
+
+        # Данные для неавторизованного и активированного клиента 
         cls.data_to_signin = {'password': 'password',
                               'phone': '7000000000',
                               'fullname': 'New client'}
         serializer = ClientRequestRegistrationSerializer(
             data=cls.data_to_signin)
         serializer.is_valid()
-        serializer.save()
-        # TODO: активировать запись клиента
+        cls.user_two = serializer.save()
+        cls.user_two.status = UserAccount.Status.CONFIRMED
 
-        # Запись о клиенте для активации клиента
+
+        # Данные неавторизованного и неактивированного клиента 
         cls.data_inactive = {'password': 'superpassword',
                              'phone': '7000000005',
                              'fullname': 'Client to activate'}
@@ -178,8 +185,8 @@ class ClientApiTests(APITestCase):
         expected_data = {
             'status': 'success',
             'data': {
-                "phone": self.data['phone'],
-                "fullname": self.data['fullname']
+                "phone": self.data_authorized_client['phone'],
+                "fullname": self.data_authorized_client['fullname']
             }
         }
         self.assertEqual(response.data,
@@ -242,7 +249,7 @@ class ClientApiTests(APITestCase):
         Ensure signout client.
         """
         url = reverse('client:signout')
-        client = Client.objects.get(phone=self.data['phone'])
+        client = Client.objects.get(phone=self.data_authorized_client['phone'])
 
         # Проверяем, что токен существует перед выходом (signout)
         is_token_before_signout = Token.objects.filter(
@@ -309,13 +316,39 @@ class ClientApiTests(APITestCase):
         Ensure unauthorized client can send request to change password.
         """
         url = reverse('client:change_password_request')
-        data = {'phone': '7000000002'}
-        # обращение неавторизованного клиента
+        data = {'phone': self.data_to_signin['phone']}
         response = self.guest.post(url,
                                    data=data,
                                    format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, data)
+        self.assertEqual(response.status_code,
+                         status.HTTP_200_OK,
+                         'Wrong status code response')
+
+        client_temp_data_code = (
+            UserAccountTempData.objects.filter(
+                user=self.user_two.id).first().temp_data_code
+        )
+        expected_data = {
+            'status': 'success',
+            'data': {
+                'temp_data_code': client_temp_data_code
+            }
+        }
+        self.assertEqual(response.data,
+                         expected_data,
+                         'Response data format error')
+
+
+        wrong_data = {'phone': '7111111111'}
+        response = self.guest.post(url,
+                                   data=wrong_data,
+                                   format='json')
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+            'Wrong phone can start change_password_request'
+        )
+
 
     def test_change_password_change_password_confirmation(self):
         """
