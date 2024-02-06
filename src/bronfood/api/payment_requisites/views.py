@@ -11,6 +11,10 @@ from bronfood.api.payment_requisites.serializers import (
     PaymentRequisitesCreateSerializer, PaymentRequisitesUpdateGetSerializer)
 from bronfood.core.client.models import Client
 from bronfood.core.payment_requisites.models import PaymentRequisites
+from rest_framework.permissions import IsAuthenticated
+# from rest_framework.authentication import TokenAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 
 PaymentRequisitesSerializer = TypeVar(
     'PaymentRequisitesSerializer', bound=ModelSerializer
@@ -29,47 +33,39 @@ class UserNotOwnCardAPIException(APIException):
 
 
 class PaymentRequisitesCreateView(APIView):
-    @classmethod
-    def check_exist_card(
-        cls,
-        client: Client,
-        validation_data: PaymentRequisitesSerializer
-    ) -> PaymentRequisites:
-        card = client.bank_card.filter(
-            cvv=validation_data.validated_data.get('cvv'),
-            card_number=validation_data.validated_data.get('card_number'),
-            cardholder_name=validation_data.validated_data.get(
-                'cardholder_name'
-            )
-        )
-        return card
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
-    def post(self, request, user_id, format=None) -> Response:
+    def post(self, request, format=None) -> Response:
         '''Сохранение данных карты для конкретного пользователя.'''
-        client = get_object_or_404(Client, id=user_id)
-        serializer = PaymentRequisitesCreateSerializer(data=request.data)
-        data_valid = serializer.is_valid()
-        if not data_valid:
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        card = self.check_exist_card(client, serializer)
-        if card:
-            return Response(
-                {'data': serializer.data,
-                 'text_error': 'Данная карта уже принадлеждит пользователю.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if request.query_params.get('save'):
+        client = request.user
+        serializer = PaymentRequisitesCreateSerializer(
+            data=request.data, context={
+                'client': client,
+                'request': request
+            }
+        )
+        serializer.is_valid(raise_exception=True)
+        if not request.query_params.get('save'):
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        if serializer.save_card:
             serializer.save(client=client)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                'data': serializer.data,
+                'massege': 'Карту которую вы пытаетесь сохранить уже существует.'
+            },
+            status=status.HTTP_200_OK
+        )
 
 
 class PaymentRequisitesUpdateGetView(APIView):
-    def put(self, request, user_id, card_id) -> Response:
-        client: Client = get_object_or_404(Client, id=user_id)
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, card_id) -> Response:
+        client: Client = request.user
         card: PaymentRequisites = get_object_or_404(
             PaymentRequisites, id=card_id)
         if not PaymentRequisites.objects.filter(
@@ -87,9 +83,9 @@ class PaymentRequisitesUpdateGetView(APIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def get(self, request, user_id, card_id):
+    def get(self, request, card_id):
         '''Получить данные карты для конкретного пользователя'''
-        client = get_object_or_404(Client, id=user_id)
+        client: Client = request.user
         card = get_object_or_404(PaymentRequisites, id=card_id)
         data = (
             PaymentRequisites.objects

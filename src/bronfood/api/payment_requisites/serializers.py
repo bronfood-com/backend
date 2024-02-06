@@ -1,3 +1,4 @@
+import re
 from rest_framework import serializers
 
 from bronfood.core.payment_requisites.models import PaymentRequisites
@@ -6,15 +7,34 @@ from bronfood.core.payment_requisites.models import PaymentRequisites
 class PaymentRequisitesCreateSerializer(
     serializers.ModelSerializer
 ):
+    card_number = serializers.CharField()
+
     class Meta:
         model = PaymentRequisites
-        fields = ['card_number', 'cardholder_name', 'expiration_data', 'cvv']
+        fields = ['card_number', 'cardholder_name', 'expiration_date', 'cvv']
         extra_kwargs = {
             'card_number': {'required': True},
             'cardholder_name': {'required': True},
-            'expiration_data': {'required': True},
+            'expiration_date': {'required': True},
             'cvv': {'required': True},
         }
+
+    def validate_card_number(self, value):
+        if not re.match(r'^\d{4}\s\d{4}\s\d{4}\s\d{4}$', value):
+            raise serializers.ValidationError(
+                "Некорректный формат номера карты"
+            )
+        return value
+
+    def validate(self, attrs):
+        print(attrs)
+        client = self.context.get('client')
+        self.save_card = self.context.get('request').query_params.get('save')
+        if self.save_card and PaymentRequisites.objects.filter(
+            card_number=attrs.get('card_number'), client=client
+        ).exists():
+            self.save_card = False
+        return attrs
 
     def create(self, validated_data, **kwargs):
         return PaymentRequisites.objects.create(**validated_data)

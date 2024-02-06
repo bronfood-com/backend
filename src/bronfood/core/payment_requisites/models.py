@@ -1,9 +1,7 @@
-from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
+from django.core.validators import RegexValidator
 from django.db import models
 
 from bronfood.core.client.models import Client
-from django.db.models import UniqueConstraint
-from django.core.validators import MinLengthValidator, MaxLengthValidator
 
 
 class PaymentRequisites(models.Model):
@@ -18,8 +16,12 @@ class PaymentRequisites(models.Model):
     card_number = models.CharField(
         max_length=19,
         validators=[
-            RegexValidator(regex=r'^\d{4}\s\d{4}\s\d{4}\s\d{4}$',)
-        ]
+            RegexValidator(
+                regex=r'^\d{4}\s\d{4}\s\d{4}\s\d{4}$',
+                code='invalid_card_number',
+            )
+        ],
+        unique=True
     )
     cardholder_name = models.CharField(
         max_length=255,
@@ -37,11 +39,3 @@ class PaymentRequisites(models.Model):
     def __str__(self) -> str:
         return (f'Владелец карты {self.cardholder_name}, '
                 f'номер карты {self.card_number}')
-
-    class Meta:
-        constraints = [
-            UniqueConstraint(
-                fields=['card_number', 'cvv', 'cardholder_name'],
-                name='unique_card_number_cvv_cardholder_name'
-            ),
-        ]
