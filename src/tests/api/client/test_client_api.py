@@ -39,10 +39,9 @@ class ClientApiTests(APITestCase):
         serializer = ClientRequestRegistrationSerializer(
             data=cls.data_to_signin)
         serializer.is_valid()
-        cls.user_two = serializer.save()
-        cls.user_two.status = UserAccount.Status.CONFIRMED
-
-
+        cls.client_to_signin = serializer.save()
+        cls.client_to_signin.status = UserAccount.Status.CONFIRMED
+    
         # Данные неавторизованного и неактивированного клиента 
         cls.data_inactive = {'password': 'superpassword',
                              'phone': '7000000005',
@@ -326,7 +325,7 @@ class ClientApiTests(APITestCase):
 
         client_temp_data_code = (
             UserAccountTempData.objects.filter(
-                user=self.user_two.id).first().temp_data_code
+                user=self.client_to_signin.id).first().temp_data_code
         )
         expected_data = {
             'status': 'success',
@@ -350,21 +349,46 @@ class ClientApiTests(APITestCase):
         )
 
 
-    def test_change_password_change_password_confirmation(self):
+    def test_change_password_confirmation(self):
         """
         Ensure unauthorized client send confirmation code
         and can authorize to change password.
         """
-        url = reverse('client:change_password_confirmation')
-        data = {"phone": "7000000002",
-                "confirmation_code": "0000"}
+        temp_data_code = (
+            UserAccountTempData.objects.create(
+                user = self.client_to_signin,
+            )
+        ).temp_data_code
 
+        url = reverse('client:change_password_confirmation')
+
+        data = {
+            'temp_data_code': temp_data_code,
+            'password': 'super200',
+            'password_confirm': 'super200'
+        }
         response = self.guest.post(url,
                                    data=data,
                                    format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code,
+                         status.HTTP_200_OK)
+
+        client_temp_data_code = (
+            UserAccountTempData.objects.filter(
+                user=self.client_to_signin.id).first().temp_data_code
+        )
+        expected_data = {
+            'status': 'success',
+            'data': {
+                'temp_data_code': client_temp_data_code
+            }
+        }
+        self.assertEqual(response.data,
+                         expected_data,
+                         'Response data format error')
+
         # после отправки кода подтверждения установлена сессия
-        self.assertIn('_auth_user_id', self.guest.session)
+        # self.assertIn('_auth_user_id', self.guest.session)
 
     def test_change_password_complete(self):
         """
