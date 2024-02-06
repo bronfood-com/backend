@@ -25,11 +25,11 @@ class ClientApiTests(APITestCase):
         serializer = ClientRequestRegistrationSerializer(
             data=cls.data_authorized_client)
         serializer.is_valid()
-        user = serializer.save()
+        cls.user = serializer.save()
         # подтвержденный статус
-        user.status = UserAccount.Status.CONFIRMED
+        cls.user.status = UserAccount.Status.CONFIRMED
         # Создадим токен для авторизации
-        cls.token = Token.objects.create(user=user)
+        cls.token = Token.objects.create(user=cls.user)
 
 
         # Данные для неавторизованного и активированного клиента 
@@ -201,31 +201,53 @@ class ClientApiTests(APITestCase):
     #     'Для прохождения теста нужно отключить валидацию на основе '
     #     'регулярных выражений в сериализаторе ClientUpdateSerializer'
     # )
-    def test_update_profile(self):
+    def test_profile_update_request(self):
         """
-        Ensure client can update password and fullname.
+        Ensure authorized client can update password,
+        fullname and phone.
         """
-        url = reverse('client:profile')
-
-        updated_data = {
-            'new_password': 'updated password',
-            'new_password_confirm': 'updated password',
-            'fullname': 'updated client'
+        data = {
+            'password': 'superpuper',
+            'password_confirm': 'superpuper',
+            'fullname': 'XXX',
+            'phone': '7121212000'
         }
-        # обращение авторизованного клиента
-        response = self.authorized_client.patch(
-            url, data=updated_data, format='json'
+        url = reverse('client:profile_update_request')
+
+        response = self.authorized_client.post(
+            url, data=data, format='json'
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # сущетвует ли клиент с обновленным именем
-        self.assertTrue(Client.objects.get(fullname='updated client'))
-        # получение хэша пароля клиента
-        updated_client_hash_password = Client.objects.get(
-            fullname='updated client').password
-        # сравнение хэшей паролей
-        is_password_updated = check_password(updated_data['new_password'],
-                                             updated_client_hash_password)
-        self.assertTrue(is_password_updated)
+        self.assertEqual(response.status_code,
+                         status.HTTP_200_OK,
+                         'Wrong status code response')
+        # добавить проверку создания корректного временного объекта
+        client_temp_data = (
+            UserAccountTempData.objects.filter(
+                user=self.user.id).first()
+        )
+        self.assertEqual(client_temp_data.fullname, data['fullname'])
+        self.assertEqual(client_temp_data.phone, data['phone'])
+        # TODO добавить проверку client_temp_data.password после
+        # того как будет настроено сохранение хэша пароля во временные данные
+        
+        temp_data_code = client_temp_data.temp_data_code
+        expected_data = {
+            'status': 'success',
+            'data': {
+                'temp_data_code': temp_data_code
+            }
+        }
+        self.assertEqual(response.data,
+                         expected_data,
+                         'Response data format error')
+
+        # # получение хэша пароля клиента
+        # updated_client_hash_password = Client.objects.get(
+        #     fullname='updated client').password
+        # # сравнение хэшей паролей
+        # is_password_updated = check_password(updated_data['new_password'],
+        #                                      updated_client_hash_password)
+        # self.assertTrue(is_password_updated)
 
     def test_client_confirmation(self):
         """
