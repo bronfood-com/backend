@@ -387,23 +387,35 @@ class ClientApiTests(APITestCase):
                          expected_data,
                          'Response data format error')
 
-        # после отправки кода подтверждения установлена сессия
-        # self.assertIn('_auth_user_id', self.guest.session)
-
     def test_change_password_complete(self):
         """
-        Ensure authorized client finalize change password procedure,
-        set new password and loggin.
+        Ensure unauthorized client can finalize change password procedure
+        and set new password.
         """
+        temp_data_code = (
+            UserAccountTempData.objects.create(
+                user = self.client_to_signin,
+            )
+        ).temp_data_code
+        
         url = reverse('client:change_password_complete')
-        request_data = {"new_password": "new_password",
-                        "new_password_confirm": "new_password"}
-        response_data = {"phone": "7000000000",
-                         "fullname": "New client"}
-        response = self.authorized_client.patch(url,
-                                                data=request_data,
-                                                format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, response_data)
-        # после отправки кода подтверждения установлена сессия
-        self.assertIn('_auth_user_id', self.authorized_client.session)
+
+        data = {
+            'temp_data_code': temp_data_code,
+            'confirmation_code': '0000'
+        }
+        response = self.guest.patch(url,
+                                    data=data,
+                                    format='json')
+        self.assertEqual(response.status_code,
+                         status.HTTP_200_OK)
+        
+        expected_data = {
+            'status': 'success',
+            'data': {
+                'message': 'Password updated'
+            }
+        }
+        self.assertEqual(response.data,
+                         expected_data,
+                         'Response data format error')

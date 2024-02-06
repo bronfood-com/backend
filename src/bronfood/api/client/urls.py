@@ -29,7 +29,7 @@ urlpatterns = [
          name='change_password_confirmation'),
      path('change_password/complete/', # подтверждение смены пароля
          ClientChangePasswordCompleteView.as_view(),
-         name='change_password_compelete'),
+         name='change_password_complete'),
      path('profile/update_request/', # внесение данных в профиль клиента
           ClientRequestProfileUpdateView.as_view(),
           name='profile_update_request'),  # подстверждение изменения профиля клиента
