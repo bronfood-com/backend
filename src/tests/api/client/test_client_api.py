@@ -15,14 +15,14 @@ class ClientApiTests(APITestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        
         # Создадим запись в БД
         cls.data = {'password': 'password',
-                'phone': '7000000002',
-                'fullname': 'Client in DB'}
+                    'phone': '7000000002',
+                    'fullname': 'Client in DB'}
         serializer = ClientRequestRegistrationSerializer(data=cls.data)
         serializer.is_valid()
         user = serializer.save()
-        
         # Создадим токен для авторизации
         cls.token = Token.objects.create(user=user)
 
@@ -34,6 +34,26 @@ class ClientApiTests(APITestCase):
             data=cls.data_to_signin)
         serializer.is_valid()
         serializer.save()
+        # TODO: активировать запись клиента
+
+        # Запись о клиенте для активации клиента
+        cls.data_inactive = {'password': 'superpassword',
+                             'phone': '7000000005',
+                             'fullname': 'Client to activate'}
+        serializer = ClientRequestRegistrationSerializer(
+            data=cls.data_inactive)
+        serializer.is_valid()
+        cls.client_inactive = serializer.save()
+        cls.temp_obj_inctive = (
+            UserAccountTempData.objects.create(
+                user = cls.client_inactive
+            )
+        )
+        cls.activation_data = {
+            'temp_data_code': cls.temp_obj_inctive.temp_data_code,
+            'confirmation_code': '0000'
+        }
+
 
     def setUp(self):
         # Создаем неавторизованый клиент
@@ -107,57 +127,40 @@ class ClientApiTests(APITestCase):
         self.assertEqual(response.data,
                          expected_data,
                          'Response data format error')
-    
+
+
     # TODO: до начала теста нужно создать временный объект в базе данных к клиенту
     def test_signup(self):
         """
         Ensure we can activate client and send him token.
         """
         url = reverse('client:signup')
-
-        # {
-        #     "temp_data_code":"88lNF9",
-        #     "confimation_code": "0000"
-        # }
-
-        count_clients_before = Client.objects.count()
+        status_client_before = self.client_inactive.status
         response = self.guest.post(
-            url, self.registration_data, format='json'
+            url, self.activation_data, format='json'
         )
-
         self.assertEqual(response.status_code,
                          status.HTTP_201_CREATED,
-                         'Not correct status code response')
-
-        self.assertEqual(Client.objects.count(),
-                         count_clients_before + 1,
-                         'Client not created')
-        
-        registered_client = Client.objects.get(
-            phone=self.registration_data['phone'])
-
-        self.assertEqual(
-            registered_client.fullname,
-            self.registration_data['fullname'],
-            'Client fullname error')
-
-        is_password_correct = check_password(self.registration_data['password'],
-                                             registered_client.password)
-        self.assertTrue(is_password_correct,
-                        'Password hash error')
-        
-        self.assertEqual(
-            registered_client.role, 'CLIENT',
-            'User role is not Client')
-        
-        client_temp_data_code = (
-            UserAccountTempData.objects.filter(
-                user=registered_client.id).first().temp_data_code
+                         'Wrong data')
+        client_id = self.client_inactive.pk
+        status_client_after = Client.objects.get(id=client_id).status
+        self.assertNotEqual(
+            status_client_before,
+            status_client_after,
+            'Client status does not changed'
         )
+        self.assertEqual(status_client_after,
+                         UserAccount.Status.CONFIRMED,
+                         'Client status does not cofirmed')
+        
+        token = Token.objects.filter(user=self.client_inactive).first()
+        
         expected_data = {
             'status': 'success',
             'data': {
-                'temp_data_code': client_temp_data_code
+                'phone': self.client_inactive.phone,
+                'fullname': self.client_inactive.fullname,
+                'auth_token': token.key
             }
         }
         self.assertEqual(response.data,
