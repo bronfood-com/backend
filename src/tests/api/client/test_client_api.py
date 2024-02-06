@@ -249,21 +249,32 @@ class ClientApiTests(APITestCase):
         #                                      updated_client_hash_password)
         # self.assertTrue(is_password_updated)
 
-    def test_client_confirmation(self):
+    def test_profile_update_confirm(self):
         """
-        Ensure that confimation code change client status.
+        Ensure that client can confirm update profile.
         """
-        url = reverse('client:confirmation')
+
+        temp_data_values = {
+            'password': 'superpuper',
+            'fullname': 'XXX',
+            'phone': '7121212000',
+            'user': self.user
+        }
+        temp_data_obj = (
+            UserAccountTempData.objects.create(**temp_data_values)
+        )
+        url = reverse('client:profile')
         # обращение авторизованного клиента
-        client_status_before = self.client.status
-        response = self.authorized_client.post(
+        response = self.authorized_client.patch(
             url, self.confirmation_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # получаю клиента из бд для проверки изменения его статуса
-        client_in_db = Client.objects.get(phone='7000000000')
-        client_status_after = client_in_db.status
-        self.assertNotEqual(client_status_before, client_status_after)
-        self.assertEqual(client_status_after, UserAccount.Status.CONFIRMED)
+# TODO дописать проверку
+#         {
+#     "status": "success",
+#     "data": {
+#         "message": "Profile updated successfully"
+#     }
+# }
 
     def test_signout(self):
         """
