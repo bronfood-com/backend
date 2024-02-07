@@ -1,4 +1,3 @@
-# import unittest
 from rest_framework.test import APIClient
 from django.urls import reverse
 from rest_framework import status
@@ -70,12 +69,6 @@ class ClientApiTests(APITestCase):
         self.authorized_client.credentials(
             HTTP_AUTHORIZATION=f'Token {self.token}')
 
-        self.client_data = {'password': 'password',
-                            'phone': '7000000000',
-                            'fullname': 'New client'}
-        # self.client = Client.objects.create(**self.client_data)
-        # self.authorized_client.force_login(self.client)
-
         # Данные для создания клиента при его регистрации
         self.registration_data = {
             'password': 'password',
@@ -135,7 +128,6 @@ class ClientApiTests(APITestCase):
                          'Response data format error')
 
 
-    # TODO: до начала теста нужно создать временный объект в базе данных к клиенту
     def test_signup(self):
         """
         Ensure we can activate client and send him token.
@@ -197,10 +189,6 @@ class ClientApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-    # @unittest.skip(
-    #     'Для прохождения теста нужно отключить валидацию на основе '
-    #     'регулярных выражений в сериализаторе ClientUpdateSerializer'
-    # )
     def test_profile_update_request(self):
         """
         Ensure authorized client can update password,
@@ -220,15 +208,13 @@ class ClientApiTests(APITestCase):
         self.assertEqual(response.status_code,
                          status.HTTP_200_OK,
                          'Wrong status code response')
-        # добавить проверку создания корректного временного объекта
+
         client_temp_data = (
             UserAccountTempData.objects.filter(
                 user=self.user.id).first()
         )
         self.assertEqual(client_temp_data.fullname, data['fullname'])
         self.assertEqual(client_temp_data.phone, data['phone'])
-        # TODO добавить проверку client_temp_data.password после
-        # того как будет настроено сохранение хэша пароля во временные данные
         
         temp_data_code = client_temp_data.temp_data_code
         expected_data = {
@@ -240,14 +226,11 @@ class ClientApiTests(APITestCase):
         self.assertEqual(response.data,
                          expected_data,
                          'Response data format error')
+        hash_password = client_temp_data.password
+        is_password_correct = check_password(data['password'],
+                                             hash_password)
+        self.assertTrue(is_password_correct)
 
-        # # получение хэша пароля клиента
-        # updated_client_hash_password = Client.objects.get(
-        #     fullname='updated client').password
-        # # сравнение хэшей паролей
-        # is_password_updated = check_password(updated_data['new_password'],
-        #                                      updated_client_hash_password)
-        # self.assertTrue(is_password_updated)
 
     def test_profile_update_confirm(self):
         """
@@ -268,13 +251,16 @@ class ClientApiTests(APITestCase):
         response = self.authorized_client.patch(
             url, self.confirmation_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-# TODO дописать проверку
-#         {
-#     "status": "success",
-#     "data": {
-#         "message": "Profile updated successfully"
-#     }
-# }
+        expected_data = {
+            'status': 'success',
+            'data': {
+                'message': 'Profile updated successfully'
+            }
+        }
+        self.assertEqual(response.data,
+                         expected_data,
+                         'Response data format error')
+
 
     def test_signout(self):
         """

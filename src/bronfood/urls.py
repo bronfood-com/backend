@@ -20,7 +20,7 @@ from bronfood.api.views import healthcheck
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from bronfood.api.client.views import CustomTokenCreateView
+from bronfood.api.views import CustomTokenCreateView
 
 
 urlpatterns = [

@@ -4,6 +4,8 @@ from .validators import (FullnameValidator,
                          KazakhstanPhoneNumberValidator)
 import random
 from bronfood.core.constants import LETTERS_AND_DIGITS, TEMP_DATA_CODE_LENGTH
+from django.contrib.auth.hashers import make_password
+
 
 class UserAccountManager(BaseUserManager):
     def create_user(self, phone, username, password=None):
@@ -81,6 +83,20 @@ class UserAccount(AbstractBaseUser):
         return self.role == UserAccount.Role.ADMIN
 
 
+class UserAccountTempDataManager(models.Manager):
+    def create_temp_data(self, user, password=None, fullname=None, phone=None):
+        # Удаляем существующий объект UserAccountTempData, если он существует
+        existing_temp_data = self.get_queryset().filter(user=user).first()
+        if existing_temp_data:
+            existing_temp_data.delete()
+
+        # Создаем новый объект UserAccountTempData
+        temp_data = self.model(user=user, fullname=fullname, phone=phone)
+        if password:
+            temp_data.password = make_password(password)
+        temp_data.save(using=self._db)
+        return temp_data
+
 class UserAccountTempData(models.Model):
     """
     Временное хранение данных пользователя.
@@ -109,7 +125,7 @@ class UserAccountTempData(models.Model):
         validators=[KazakhstanPhoneNumberValidator],
         null=True
     )
-    
+    objects = UserAccountTempDataManager()
 
     @classmethod
     def get_unique_data_code(cls) -> str:

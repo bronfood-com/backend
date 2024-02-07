@@ -1,6 +1,3 @@
-from djoser import utils
-from djoser.conf import settings
-from djoser.views import TokenCreateView
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
@@ -40,8 +37,7 @@ class ClientRequestRegistrationView(BaseAPIView):
         client = client_serializer.instance
 
         # Создание объекта UserAccountTempData
-        temp_data_obj = UserAccountTempData.objects.create(user=client)
-        temp_data_obj.save()
+        temp_data_obj = UserAccountTempData.objects.create_temp_data(user=client)
 
         # TODO: создание СМС с нужной причиной в объекте клинта
         # и отправка на телефон
@@ -103,10 +99,10 @@ class ClientChangePasswordRequestView(BaseAPIView):
     Отправляет телефон.
     Вовращает уникальный код, связанный с объектом клиента.
     """
-    # TODO: проверить как у владельца осуществляется восстановление пароля.
+
     def post(self, request):
         client_phone = request.data.get('phone')
-        # проверить в сериализаторе, что верный формат телефона
+        #TODO проверить в сериализаторе, что верный формат телефона
         client = Client.objects.filter(phone=client_phone).first()
         
         if not client:
@@ -115,12 +111,10 @@ class ClientChangePasswordRequestView(BaseAPIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Создание объекта UserAccountTempData
-        temp_data_obj = UserAccountTempData.objects.create(
-            temp_data_code=UserAccountTempData.get_unique_data_code(),
+        temp_data_obj = UserAccountTempData.objects.create_temp_data(
             user=client
         )
-        temp_data_obj.save()
+
         response_data = {'temp_data_code': temp_data_obj.temp_data_code}
         return Response(
             data=success_data(response_data),
@@ -137,7 +131,7 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
     Предложенный пароль временно сохраняется в бд.
     Формируется, сохраняется в бд и направляется клиенту код подтверждения.
     """
-    # TODO: проверить как у владельца осуществляется восстановление пароля.
+
     serializer_class = TempDataSerializer
 
     def post(self, request):
@@ -150,7 +144,7 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         client_id = temp_data_obj.user.id
-        temp_data_obj.delete()
+
 
         data = request.data
         data['user'] = client_id
@@ -205,19 +199,15 @@ class ClientChangePasswordCompleteView(BaseAPIView):
         
         data = temp_data_serializer.data
         data.pop('user')
-        # Избегаем передачи атрибутов с None, если они не должны быть изменены
+        # Избегаем передачи атрибутов с None
         data = {key: value for key, value in data.items() if value is not None}
-
+        
         # Обновляем данные у текущего клиента
-        serializer = ClientUpdateSerializer(client, data=data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            temp_data_obj.delete()
-            return Response(success_data({'message': 'Password updated'}),
-                            status=status.HTTP_200_OK)
-        else:
-            return Response(data=error_data('Validation error'),
-                            status=status.HTTP_400_BAD_REQUEST)
+        client.__dict__.update(data)
+        client.save()
+
+        return Response(success_data({'message': 'Password updated'}),
+                        status=status.HTTP_200_OK)
 
 
 class ClientProfileView(BaseAPIView):
@@ -244,10 +234,10 @@ class ClientProfileView(BaseAPIView):
         if confirmation_code != CONFIRMATION_CODE:
             error_message = 'Validation error'
 
-        temp_data = UserAccountTempData.objects.filter(
+        temp_data_obj = UserAccountTempData.objects.filter(
             user=self.current_client.id).first()
 
-        if not temp_data:
+        if not temp_data_obj:
             error_message = 'Validation error'
 
         if error_message:
@@ -256,25 +246,20 @@ class ClientProfileView(BaseAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        client = temp_data_obj.user
         # Преобразуем объект temp_data в словарь с использованием сериализатора
-        temp_data_serializer = TempDataSerializer(temp_data)
+        temp_data_serializer = TempDataSerializer(temp_data_obj)
         data = temp_data_serializer.data
-        data.pop('user')
-        # Избегаем передачи атрибутов с None, если они не должны быть изменены
-        data = {key: value for key, value in data.items() if value is not None}
 
+        data.pop('user')
+        # Избегаем передачи атрибутов с None
+        data = {key: value for key, value in data.items() if value is not None}
+        
         # Обновляем данные у текущего клиента
-        serializer = ClientUpdateSerializer(self.current_client,
-                                            data=data,
-                                            partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            temp_data.delete()
-            return Response(success_data({'message': 'Profile updated successfully'}),
+        client.__dict__.update(data)
+        client.save()
+        return Response(success_data({'message': 'Profile updated successfully'}),
                             status=status.HTTP_200_OK)
-        else:
-            return Response(data=error_data('Validation error'),
-                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class ClientRequestProfileUpdateView(BaseAPIView):
@@ -305,20 +290,3 @@ class ClientRequestProfileUpdateView(BaseAPIView):
         return Response(success_data(response_data),
                         status=status.HTTP_200_OK)
     
-
-class CustomTokenCreateView(TokenCreateView):
-    """
-    Custom token creation view with additional data.
-    """
-    def _action(self, serializer):
-        token = utils.login_user(self.request, serializer.user)
-        token_serializer_class = settings.SERIALIZERS.token
-        response_data = token_serializer_class(token).data
-        additional_data = {
-            'fullname': token.user.fullname,
-            'phone': token.user.phone,
-            'role': token.user.role,
-            }
-        response_data.update(additional_data)
-        return Response(success_data(response_data),
-                        status=status.HTTP_200_OK)

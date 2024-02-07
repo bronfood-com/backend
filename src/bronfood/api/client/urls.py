@@ -5,7 +5,6 @@ from .views import (
                     ClientChangePasswordCompleteView,
                     ClientProfileView,
                     ClientRegistrationView,
-                    CustomTokenCreateView,
                     ClientRequestRegistrationView,
                     ClientChangePasswordRequestView,
                     ClientChangePasswordConfirmationView,
@@ -39,5 +38,4 @@ urlpatterns = [
 # Token
 urlpatterns += [
     re_path(r"^signout/?$", TokenDestroyView.as_view(), name="signout"),
-#     re_path(r"^signin/?$", CustomTokenCreateView.as_view(), name="signin"),
 ]
