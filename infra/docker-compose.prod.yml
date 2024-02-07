@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15.3-alpine3.18
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ../.env
+  redis:
+    image: redis:7-alpine
+  web:
+    build: ../
+    restart: always
+    depends_on:
+      - db
+    entrypoint: ['python', 'infra/entrypoint.py', '-p', '--web']
+    env_file:
+      - ../.env
+    ports:
+      - '8000:8000'
+  workers:
+    build: ../
+    entrypoint: ['python', 'infra/entrypoint.py', '-p', '--workers']
+    env_file:
+      - ../.env
+    depends_on:
+      - redis
+  scheduler:
+    build: ../
+    entrypoint: ['python', 'infra/entrypoint.py', '-p', '--scheduler']
+    env_file:
+      - ../.env
+    depends_on:
+      - redis
+
+volumes:
+  postgres_data:

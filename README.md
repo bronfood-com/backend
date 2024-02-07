@@ -20,21 +20,26 @@
 git clone https://github.com/bronfood-com/backend
 ```
 
-### Запуск приложения вне контейнера:
-
-```
-docker-compose -f infra/docker-compose.only_db.yml up -d
-python src/manage.py runserver
-```
-
-### Запуск приложения и базы данных в контейнерах:
+### Запуск приложения для отладки:
 
 > [!WARNING]
 > Для запуска необходимо изменить `.env`:
-> В поле `DB_HOST` нужно установить значение `db`
+> В поле `ENV_NAME` нужно установить значение `local`
 
 ```
-docker-compose -f infra/docker-compose.django_db.yml up -d
+docker-compose -f infra/docker-compose.local.yml up -d
+python src/manage.py runserver
+```
+
+### Запуск приложения на сервере:
+
+> [!WARNING]
+> Все запросы будут обрабатываться через Gunicorn
+> Nginx в проекте пока еще не настроен
+> Значение в поле `ENV_NAME` устанавливается автоматически
+
+```
+docker-compose -f infra/docker-compose.prod.yml up -d
 ```
 
 ### Запуск unit-testов:
