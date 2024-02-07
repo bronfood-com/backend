@@ -26,11 +26,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG')
-
 ENV_NAME = os.getenv('ENV_NAME', 'local')
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = ENV_NAME == 'local'
 
 
 ALLOWED_HOSTS = ['*']
@@ -39,10 +37,6 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    'bronfood.core.client.apps.ClientConfig',
-    'bronfood.core.useraccount.apps.UseraccountConfig',
-    'bronfood.api.apps.ApiConfig',
-    'bronfood.core.restaurant_owner.apps.RestaurantOwnerConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,6 +45,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'drf_yasg',
     'rest_framework',
+    'django_dramatiq',
+    'dramatiq_crontab',
+    'bronfood.core.phone.apps.PhoneConfig',
+    'bronfood.core.client.apps.ClientConfig',
+    'bronfood.core.useraccount.apps.UseraccountConfig',
+    'bronfood.api.apps.ApiConfig',
+    'bronfood.core.restaurant_owner.apps.RestaurantOwnerConfig'
 ]
 
 MIDDLEWARE = [
@@ -93,7 +94,7 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_DB'),
         'USER': os.getenv('POSTGRES_USER'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
+        'HOST': os.getenv('DB_HOST') if not DEBUG else 'localhost',
         'PORT': os.getenv('DB_PORT')
     }
 }
@@ -154,3 +155,21 @@ VENDORS = {
             }
         }
 }
+
+DRAMATIQ_BROKER = {
+    'BROKER': 'dramatiq.brokers.redis.RedisBroker',
+    'OPTIONS': {
+        'url': f'redis://{os.getenv("RD_HOST") if not DEBUG else "localhost"}:{os.getenv("RD_PORT")}',
+    },
+    'MIDDLEWARE': [
+        'dramatiq.middleware.Prometheus',
+        'dramatiq.middleware.AgeLimit',
+        'dramatiq.middleware.TimeLimit',
+        'dramatiq.middleware.Callbacks',
+        'dramatiq.middleware.Retries',
+        'django_dramatiq.middleware.DbConnectionsMiddleware',
+        "django_dramatiq.middleware.AdminMiddleware",
+    ]
+}
+
+DRAMATIQ_TASKS_DATABASE = "default"
