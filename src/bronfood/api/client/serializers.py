@@ -6,7 +6,7 @@ from bronfood.core.useraccount.models import UserAccountTempData, UserAccount
 from bronfood.core.useraccount.validators import (
     ConfirmationValidator, FullnameValidator, KazakhstanPhoneNumberValidator,
     PasswordValidator)
-
+from django.contrib.auth.hashers import make_password
 
 class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
     """
@@ -37,15 +37,16 @@ class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password', None)
         user = super().create(validated_data)
         if password:
-            # Обеспечивает кодирование пароля перед сохранением в БД.
             user.set_password(password)
             user.save(update_fields=['password'])
         return user
     
-    def validate_phone(self, value):
-        if Client.objects.filter(phone=value).exists():
-            raise serializers.ValidationError("Phone is already exists.")
-        return value
+    def validate(self, data):
+        if Client.objects.filter(phone=data.get('phone')).exists():
+            raise serializers.ValidationError(
+                    'Phone number is already exists.'
+            )
+        return data
 
 
 class TempDataSerializer(serializers.ModelSerializer):
@@ -81,6 +82,13 @@ class TempDataSerializer(serializers.ModelSerializer):
                   'phone',
                   'user'
                   ]
+
+    def create(self, validated_data):
+        user = validated_data.pop('user')
+        temp_data = UserAccountTempData.objects.create_temp_data(
+            user=user, **validated_data)
+        return temp_data
+
 
     def validate(self, data):
         password = data.get('password')
@@ -152,8 +160,3 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
                   'phone',
                   'fullname']
 
-    def update(self, instance, validated_data):
-        new_password = validated_data.pop('password', None)
-        if new_password:
-            instance.set_password(new_password)
-        return super().update(instance, validated_data)
