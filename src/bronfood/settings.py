@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'bronfood.core.client.apps.ClientConfig',
     'bronfood.core.useraccount.apps.UseraccountConfig',
     'bronfood.api.apps.ApiConfig',
-    'bronfood.core.phone.apps.PhoneConfig',
+    'bronfood.core.restaurant_owner.apps.RestaurantOwnerConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -99,6 +99,8 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT')
     }
 }
+
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 

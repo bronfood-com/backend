@@ -39,7 +39,10 @@ class PhoneSmsOtpVerification(models.Model):
     """Describing the one-time password model."""
     message = models.CharField(
         verbose_name='Sms message', choices=SmsMessage.choices,
+<<<<<<< HEAD
         max_length=250
+=======
+>>>>>>> develop
     )
     code = models.CharField(
         verbose_name='One-time password', max_length=4
