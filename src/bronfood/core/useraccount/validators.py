@@ -12,9 +12,9 @@ class FullnameValidator(validators.RegexValidator):
 
 
 class KazakhstanPhoneNumberValidator(validators.RegexValidator):
-    regex = r'^7\d{9}$'
+    regex = r'^7\d{10}$'
     message = (
-        'Please enter a phone number starting with 7 followed by 9 digits.'
+        'Please enter a phone number starting with 7 followed by 10 digits.'
     )
     flags = 0
 
