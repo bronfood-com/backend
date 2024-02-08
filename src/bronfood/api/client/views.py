@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
@@ -291,15 +290,3 @@ class ClientRequestProfileUpdateView(BaseAPIView):
         return Response(success_data(response_data),
                         status=status.HTTP_200_OK)
     
-=======
-from rest_framework import viewsets
-
-from bronfood.core.restaurant_owner.models import RestaurantOwner
-from .serializers import RestaurantOwnerSerializer
-
-
-class RestaurantOwnerViewSet(viewsets.ModelViewSet):
-    """Набор представлений для владельца заведения."""
-    queryset = RestaurantOwner.objects.all()
-    serializer_class = RestaurantOwnerSerializer
->>>>>>> develop
