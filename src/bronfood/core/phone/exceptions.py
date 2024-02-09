@@ -1,0 +1,2 @@
+class WrongOtpCode(Exception):
+    pass
