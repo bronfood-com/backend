@@ -1,12 +1,8 @@
 from django.urls import reverse
-from bronfood.api.payment_requisites.views import (
-    PaymentRequisitesCreateView,
-    PaymentRequisitesUpdateGetView,
-)
+
 from urllib.parse import urlencode
 from rest_framework.test import APITestCase
 from bronfood.core.payment_requisites.models import PaymentRequisites
-from bronfood.api.payment_requisites.views import UserNotOwnCardAPIException
 from bronfood.core.client.models import Client
 
 
@@ -96,7 +92,7 @@ class TestPaymentRequisites(APITestCase):
             response_for_user_2.data['cardholder_name']
         )
 
-    def test_get_bank_card_for_concrete_user_when_user_get_not_his_own_card(self):
+    def test_get_bank_card_for_user_when_user_get_not_his_own_card(self):
         url = reverse(
             'requisites:payment_requisites_detail', kwargs={
                 'user_id': self.user_test_1.id,
