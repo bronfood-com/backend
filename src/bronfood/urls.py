@@ -26,6 +26,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("healthcheck/", healthcheck),
     path("api/", include("bronfood.api.client.urls", namespace="api")),
+    path('api/v1/', include('bronfood.core.payment_requisites.urls')),
 ]
 
 
