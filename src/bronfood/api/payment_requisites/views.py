@@ -54,7 +54,10 @@ class PaymentRequisitesCreateView(APIView):
         return Response(
             {
                 'data': serializer.data,
-                'massege': 'Карту которую вы пытаетесь сохранить уже существует.'
+                'massege': (
+                    'Карту которую вы пытаетесь сохранить '
+                    'уже существует.'
+                )
             },
             status=status.HTTP_200_OK
         )
