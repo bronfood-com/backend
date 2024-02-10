@@ -2,11 +2,12 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 
 from bronfood.core.client.models import Client
-from bronfood.core.useraccount.models import UserAccountTempData, UserAccount
+from bronfood.core.useraccount.models import UserAccount, UserAccountTempData
 from bronfood.core.useraccount.validators import (
-    ConfirmationValidator, FullnameValidator, KazakhstanPhoneNumberValidator,
+    # ConfirmationValidator,
+    FullnameValidator, KazakhstanPhoneNumberValidator,
     PasswordValidator)
-from django.contrib.auth.hashers import make_password
+
 
 class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
     """
@@ -14,7 +15,7 @@ class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
     - password
     - phone
     - fullname
-    
+
     Предусматривает создание объекта клиента.
     Обеспечивает кодирование пароля перед сохранением в БД.
     """
@@ -28,11 +29,11 @@ class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
     fullname = serializers.CharField(
         validators=[FullnameValidator()]
     )
-    
+
     class Meta:
         model = Client
         fields = ['password', 'phone', 'fullname']
-    
+
     def create(self, validated_data):
         password = validated_data.pop('password', None)
         user = super().create(validated_data)
@@ -40,11 +41,11 @@ class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
             user.set_password(password)
             user.save(update_fields=['password'])
         return user
-    
+
     def validate(self, data):
         if Client.objects.filter(phone=data.get('phone')).exists():
             raise serializers.ValidationError(
-                    'Phone number is already exists.'
+                'Phone number is already exists.'
             )
         return data
 
@@ -73,7 +74,6 @@ class TempDataSerializer(serializers.ModelSerializer):
         queryset=UserAccount.objects.all(),
         required=True)
 
-
     class Meta:
         model = UserAccountTempData
         fields = ['password',
@@ -89,7 +89,6 @@ class TempDataSerializer(serializers.ModelSerializer):
             user=user, **validated_data)
         return temp_data
 
-
     def validate(self, data):
         password = data.get('password')
         password_confirm = data.get('password_confirm')
@@ -100,7 +99,7 @@ class TempDataSerializer(serializers.ModelSerializer):
                     'Рasswords do not match')
         if Client.objects.filter(phone=data.get('phone')).exists():
             raise serializers.ValidationError(
-                    'Phone number exist'
+                'Phone number exist'
             )
         password_confirm = data.pop('password_confirm')
         return data
@@ -156,7 +155,6 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Client
-        fields = ['password', 
+        fields = ['password',
                   'phone',
                   'fullname']
-

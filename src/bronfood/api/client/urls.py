@@ -1,38 +1,34 @@
 from django.urls import path, re_path
 from djoser.views import TokenDestroyView
 
-from .views import (
-                    ClientChangePasswordCompleteView,
-                    ClientProfileView,
-                    ClientRegistrationView,
-                    ClientRequestRegistrationView,
-                    ClientChangePasswordRequestView,
+from .views import (ClientChangePasswordCompleteView,
                     ClientChangePasswordConfirmationView,
-                    ClientRequestProfileUpdateView
-                    )
+                    ClientChangePasswordRequestView, ClientProfileView,
+                    ClientRegistrationView, ClientRequestProfileUpdateView,
+                    ClientRequestRegistrationView)
 
 app_name = 'client'
 
 urlpatterns = [
-    path('request_to_signup/',  # создание клиента
+    path('request_to_signup/',
          ClientRequestRegistrationView.as_view(),
          name="request_to_signup"),
-    path('signup/',  # активация клиента и авторизация
+    path('signup/',
          ClientRegistrationView.as_view(),
          name='signup'),
-    path('change_password/request/',  # запрос на смену пароля
+    path('change_password/request/',
          ClientChangePasswordRequestView.as_view(),
          name='change_password_request'),
-    path('change_password/confirmation/', # внесение данных о новом пароле
+    path('change_password/confirmation/',
          ClientChangePasswordConfirmationView.as_view(),
          name='change_password_confirmation'),
-     path('change_password/complete/', # подтверждение смены пароля
+    path('change_password/complete/',
          ClientChangePasswordCompleteView.as_view(),
          name='change_password_complete'),
-     path('profile/update_request/', # внесение данных в профиль клиента
-          ClientRequestProfileUpdateView.as_view(),
-          name='profile_update_request'),  # подстверждение изменения профиля клиента
-     path('profile/', ClientProfileView.as_view(), name='profile'),
+    path('profile/update_request/',
+         ClientRequestProfileUpdateView.as_view(),
+         name='profile_update_request'),
+    path('profile/', ClientProfileView.as_view(), name='profile'),
 ]
 
 # Token

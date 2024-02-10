@@ -36,7 +36,7 @@ class CustomTokenCreateView(TokenCreateView):
             'fullname': token.user.fullname,
             'phone': token.user.phone,
             'role': token.user.role,
-            }
+        }
         response_data.update(additional_data)
         return Response(success_data(response_data),
                         status=status.HTTP_200_OK)
