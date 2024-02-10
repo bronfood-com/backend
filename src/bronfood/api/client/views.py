@@ -4,7 +4,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from bronfood.api.client.serializers import (
-    ClientRequestRegistrationSerializer, TempDataSerializer)
+    ClientRequestRegistrationSerializer,
+    TempDataCodeSerializer, ConfirmationCodeSerializer,
+    TempDataSerializer)
 from bronfood.api.client.utils import error_data, success_data
 from bronfood.api.views import BaseAPIView
 from bronfood.core.client.models import Client, UserAccount
@@ -56,29 +58,43 @@ class ClientRegistrationView(BaseAPIView):
     """
 
     def post(self, request):
-        # TODO настроить обработку сериалайзером
-
         temp_data_code = request.data.get('temp_data_code')
         confirmation_code = request.data.get('confirmation_code')
+        temp_serializer = TempDataCodeSerializer(
+            data={'temp_data_code': temp_data_code})
+        confirmation_serializer = ConfirmationCodeSerializer(
+            data={'code': confirmation_code})
 
-        error_message = None
-        if not temp_data_code or not confirmation_code:
-            error_message = 'Validation error'
-        if confirmation_code != CONFIRMATION_CODE:
-            error_message = 'Invalid_confirmation_code'
+        temp_errors = []
+        confirmation_errors = []
+
+        if not temp_serializer.is_valid():
+            temp_errors = [
+                error
+                for error_list in temp_serializer.errors.values()
+                for error in error_list
+            ]
+        if not confirmation_serializer.is_valid():
+            confirmation_errors = [
+                error
+                for error_list in confirmation_serializer.errors.values()
+                for error in error_list
+            ]
+        errors = temp_errors + confirmation_errors
+        if errors:
+            return Response(
+                data=error_data(errors),
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         temp_data = UserAccountTempData.get_object(temp_data_code)
         if not temp_data:
-            error_message = 'Temp_data_error'
-
-        if error_message:
             return Response(
-                data=error_data(error_message),
+                data=error_data('incorrect temp_data_code'),
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         client = temp_data.user
-
         # TODO: добавить проверку кода подтверждения у клиента.
         # если есть активный код подтверждения у клиента
         # если причина создания кода подтверждения - регистрация

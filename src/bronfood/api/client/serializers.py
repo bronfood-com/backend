@@ -5,8 +5,9 @@ from rest_framework import serializers
 from bronfood.core.client.models import Client
 from bronfood.core.useraccount.models import UserAccount, UserAccountTempData
 from bronfood.core.useraccount.validators import (  # ConfirmationValidator,
-    FullnameValidator, KazakhstanPhoneNumberValidator, validate_password)
-
+    FullnameValidator, KazakhstanPhoneNumberValidator,
+    validate_password, validate_temp_data_code, validate_confirmation_code)
+from bronfood.core.phone.models import PhoneSmsOtpVerification
 
 class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
     """
@@ -168,3 +169,27 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
         fields = ['password',
                   'phone',
                   'fullname']
+
+
+class TempDataCodeSerializer(serializers.ModelSerializer):
+    temp_data_code = serializers.CharField(
+        validators=[validate_temp_data_code]
+    )
+
+    class Meta:
+        model = UserAccountTempData
+        fields = [
+            'temp_data_code',
+        ]
+
+
+class ConfirmationCodeSerializer(serializers.ModelSerializer):
+    code = serializers.CharField(
+        validators=[validate_confirmation_code]
+    )
+
+    class Meta:
+        model = PhoneSmsOtpVerification
+        fields = [
+            'code',
+        ]
