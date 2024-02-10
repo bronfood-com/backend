@@ -40,6 +40,7 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'bronfood.core.client.apps.ClientConfig',
+    'bronfood.core.phone.apps.PhoneConfig',
     'bronfood.core.useraccount.apps.UseraccountConfig',
     'bronfood.api.apps.ApiConfig',
     'bronfood.core.phone.apps.PhoneConfig',

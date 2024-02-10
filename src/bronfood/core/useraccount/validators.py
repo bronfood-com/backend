@@ -3,6 +3,9 @@ import re
 from django.core import validators
 from django.core.exceptions import ValidationError
 
+from bronfood.core.constants import (CONFIRMATION_CODE_LENGTH, DIGITS,
+                                     LETTERS_AND_DIGITS, TEMP_DATA_CODE_LENGTH)
+
 
 class FullnameValidator(validators.RegexValidator):
     regex = r'^[А-Яа-яЁёA-Za-z\s]{2,40}$'
@@ -39,3 +42,31 @@ def validate_password(value):
             f'Simbols {unmatch_symbols} are not allowed to be used'
         )
     return value
+
+
+def validate_temp_data_code(value):
+    if len(value) != TEMP_DATA_CODE_LENGTH:
+        raise ValidationError(
+            f'Temp data code must be exactly {TEMP_DATA_CODE_LENGTH} '
+            'characters long.'
+        )
+
+    if not all(char in LETTERS_AND_DIGITS for char in value):
+        raise ValidationError(
+            'Temp data code can only contain letters and digits.'
+        )
+
+
+def validate_confirmation_code(value):
+    if len(value) != CONFIRMATION_CODE_LENGTH:
+        raise ValidationError(
+            f'Confirmation code must be exactly {CONFIRMATION_CODE_LENGTH} '
+            'characters long.'
+        )
+
+    if not all(char in DIGITS for char in value):
+        raise ValidationError(
+            'Confirmation code can only contain digits.'
+        )
+
+# нужен ли общий валидатор что передаваемые данные строка?
