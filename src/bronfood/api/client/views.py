@@ -4,19 +4,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from bronfood.api.client.serializers import (
-    ClientUpdateSerializer,
-    ClientRequestRegistrationSerializer,
-    TempDataSerializer
-)
-from bronfood.api.constants import HTTP_STATUS_MSG
+    ClientRequestRegistrationSerializer, TempDataSerializer)
+from bronfood.api.client.utils import error_data, success_data
 from bronfood.api.views import BaseAPIView
 from bronfood.core.client.models import Client, UserAccount
 from bronfood.core.useraccount.models import UserAccountTempData
 
-from bronfood.api.client.utils import error_data, success_data
-
-
 CONFIRMATION_CODE = '0000'
+
 
 class ClientRequestRegistrationView(BaseAPIView):
     """
@@ -37,7 +32,9 @@ class ClientRequestRegistrationView(BaseAPIView):
         client = client_serializer.instance
 
         # Создание объекта UserAccountTempData
-        temp_data_obj = UserAccountTempData.objects.create_temp_data(user=client)
+        temp_data_obj = UserAccountTempData.objects.create_temp_data(
+            user=client
+        )
 
         # TODO: создание СМС с нужной причиной в объекте клинта
         # и отправка на телефон
@@ -102,9 +99,9 @@ class ClientChangePasswordRequestView(BaseAPIView):
 
     def post(self, request):
         client_phone = request.data.get('phone')
-        #TODO проверить в сериализаторе, что верный формат телефона
+        # TODO проверить в сериализаторе, что верный формат телефона
         client = Client.objects.filter(phone=client_phone).first()
-        
+
         if not client:
             return Response(
                 data=error_data('Phone not found'),
@@ -135,7 +132,7 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
     serializer_class = TempDataSerializer
 
     def post(self, request):
-        
+
         temp_data_obj = UserAccountTempData.get_object(
             temp_data_code=request.data.get('temp_data_code'))
         if not temp_data_obj:
@@ -144,7 +141,6 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         client_id = temp_data_obj.user.id
-
 
         data = request.data
         data['user'] = client_id
@@ -162,7 +158,8 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
         # TODO: создание СМС с нужной причиной в объекте клинта
         # и отправка на телефон
 
-        response_data = {'temp_data_code': temp_data_serializer.instance.temp_data_code}
+        response_data = {
+            'temp_data_code': temp_data_serializer.instance.temp_data_code}
         return Response(
             data=success_data(response_data),
             status=status.HTTP_200_OK
@@ -196,12 +193,12 @@ class ClientChangePasswordCompleteView(BaseAPIView):
         client = temp_data_obj.user
         # Преобразуем объект temp_data в словарь с использованием сериализатора
         temp_data_serializer = TempDataSerializer(temp_data_obj)
-        
+
         data = temp_data_serializer.data
         data.pop('user')
         # Избегаем передачи атрибутов с None
         data = {key: value for key, value in data.items() if value is not None}
-        
+
         # Обновляем данные у текущего клиента
         client.__dict__.update(data)
         client.save()
@@ -225,7 +222,6 @@ class ClientProfileView(BaseAPIView):
         }
         return Response(success_data(response_data),
                         status=status.HTTP_200_OK)
-
 
     def patch(self, request):
         confirmation_code = request.data.get('confirmation_code')
@@ -254,12 +250,13 @@ class ClientProfileView(BaseAPIView):
         data.pop('user')
         # Избегаем передачи атрибутов с None
         data = {key: value for key, value in data.items() if value is not None}
-        
+
         # Обновляем данные у текущего клиента
         client.__dict__.update(data)
         client.save()
-        return Response(success_data({'message': 'Profile updated successfully'}),
-                            status=status.HTTP_200_OK)
+        return Response(
+            success_data({'message': 'Profile updated successfully'}),
+            status=status.HTTP_200_OK)
 
 
 class ClientRequestProfileUpdateView(BaseAPIView):
@@ -285,8 +282,9 @@ class ClientRequestProfileUpdateView(BaseAPIView):
         # Создание временных данных
         temp_data_serializer.save()
 
-        response_data = {'temp_data_code': temp_data_serializer.instance.temp_data_code}
+        response_data = {
+            'temp_data_code': temp_data_serializer.instance.temp_data_code
+        }
 
         return Response(success_data(response_data),
                         status=status.HTTP_200_OK)
-    
