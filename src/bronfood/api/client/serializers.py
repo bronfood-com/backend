@@ -3,11 +3,12 @@ from django.core import validators
 from rest_framework import serializers
 
 from bronfood.core.client.models import Client
-from bronfood.core.useraccount.models import UserAccount, UserAccountTempData
-from bronfood.core.useraccount.validators import (  # ConfirmationValidator,
-    FullnameValidator, KazakhstanPhoneNumberValidator,
-    validate_password, validate_temp_data_code, validate_confirmation_code)
 from bronfood.core.phone.models import PhoneSmsOtpVerification
+from bronfood.core.useraccount.models import UserAccount, UserAccountTempData
+from bronfood.core.useraccount.validators import (
+    FullnameValidator, KazakhstanPhoneNumberValidator,
+    validate_confirmation_code, validate_password, validate_temp_data_code)
+
 
 class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
     """
