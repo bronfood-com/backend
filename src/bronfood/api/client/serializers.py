@@ -1,12 +1,11 @@
 from django.contrib.auth import authenticate
+from django.core import validators
 from rest_framework import serializers
 
 from bronfood.core.client.models import Client
 from bronfood.core.useraccount.models import UserAccount, UserAccountTempData
-from bronfood.core.useraccount.validators import (
-    # ConfirmationValidator,
-    FullnameValidator, KazakhstanPhoneNumberValidator,
-    PasswordValidator)
+from bronfood.core.useraccount.validators import (  # ConfirmationValidator,
+    FullnameValidator, KazakhstanPhoneNumberValidator, validate_password)
 
 
 class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
@@ -21,7 +20,11 @@ class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(
         write_only=True,
-        validators=[PasswordValidator()]
+        validators=[
+            validators.MinLengthValidator(4),
+            validators.MaxLengthValidator(20),
+            validate_password,
+        ]
     )
     phone = serializers.CharField(
         validators=[KazakhstanPhoneNumberValidator()]
@@ -56,11 +59,14 @@ class TempDataSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(
         required=False,
-        validators=[PasswordValidator()]
+        validators=[
+            validators.MinLengthValidator(4),
+            validators.MaxLengthValidator(20),
+            validate_password,
+        ]
     )
     password_confirm = serializers.CharField(
         required=False,
-        validators=[PasswordValidator()]
     )
     fullname = serializers.CharField(
         required=False,
@@ -113,7 +119,11 @@ class ClientLoginSerializer(serializers.Serializer):
         validators=[KazakhstanPhoneNumberValidator()]
     )
     password = serializers.CharField(
-        validators=[PasswordValidator()],
+        validators=[
+            validators.MinLengthValidator(4),
+            validators.MaxLengthValidator(20),
+            validate_password,
+        ],
         write_only=True,
     )
 
@@ -142,7 +152,7 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(
         required=False,
-        validators=[PasswordValidator()]
+        # validators=[PasswordValidator()]
     )
     phone = serializers.CharField(
         required=False,

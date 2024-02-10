@@ -23,8 +23,14 @@ class ClientRequestRegistrationView(BaseAPIView):
     def post(self, request):
         client_serializer = self.serializer_class(data=request.data)
         if not client_serializer.is_valid():
+            # Получение всех сообщений об ошибках из сериализатора
+            errors = [
+                error
+                for error_list in client_serializer.errors.values()
+                for error in error_list
+            ]
             return Response(
-                data=error_data('Validation error'),
+                data=error_data(errors),
                 status=status.HTTP_400_BAD_REQUEST
             )
         # Создание неподтвержденного клиента
@@ -36,7 +42,7 @@ class ClientRequestRegistrationView(BaseAPIView):
             user=client
         )
 
-        # TODO: создание СМС с нужной причиной в объекте клинта
+        # TODO: создание СМС с нужной причиной в объекте клиента
         # и отправка на телефон
         response_data = {'temp_data_code': temp_data_obj.temp_data_code}
         return Response(
@@ -51,8 +57,10 @@ class ClientRegistrationView(BaseAPIView):
 
     def post(self, request):
         # TODO настроить обработку сериалайзером
+
         temp_data_code = request.data.get('temp_data_code')
         confirmation_code = request.data.get('confirmation_code')
+
         error_message = None
         if not temp_data_code or not confirmation_code:
             error_message = 'Validation error'
@@ -144,6 +152,10 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
 
         data = request.data
         data['user'] = client_id
+
+        # TODO тут настроить обработку направленного в сериализатор
+        # по новой схеме
+
         temp_data_serializer = self.serializer_class(
             data=data
         )
@@ -173,6 +185,7 @@ class ClientChangePasswordCompleteView(BaseAPIView):
     """
 
     def patch(self, request):
+        # TODO добавить сериализатор для кода
         confirmation_code = request.data.get('confirmation_code')
 
         error_message = None
@@ -224,6 +237,7 @@ class ClientProfileView(BaseAPIView):
                         status=status.HTTP_200_OK)
 
     def patch(self, request):
+        # TODO добавить сериализатор для кода
         confirmation_code = request.data.get('confirmation_code')
 
         error_message = None
@@ -275,6 +289,7 @@ class ClientRequestProfileUpdateView(BaseAPIView):
             data=data
         )
         if not temp_data_serializer.is_valid():
+            # TODO внести валидацию на этом уровне
             return Response(
                 data=error_data('Validation error'),
                 status=status.HTTP_400_BAD_REQUEST

@@ -1,10 +1,12 @@
-from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from .validators import (FullnameValidator,
-                         KazakhstanPhoneNumberValidator)
 import random
-from bronfood.core.constants import LETTERS_AND_DIGITS, TEMP_DATA_CODE_LENGTH
+
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.db import models
+
+from bronfood.core.constants import LETTERS_AND_DIGITS, TEMP_DATA_CODE_LENGTH
+
+from .validators import FullnameValidator, KazakhstanPhoneNumberValidator
 
 
 class UserAccountManager(BaseUserManager):
@@ -97,6 +99,7 @@ class UserAccountTempDataManager(models.Manager):
         temp_data.save(using=self._db)
         return temp_data
 
+
 class UserAccountTempData(models.Model):
     """
     Временное хранение данных пользователя.
@@ -138,7 +141,7 @@ class UserAccountTempData(models.Model):
         if not cls.objects.filter(temp_data_code=rand_string).exists():
             return rand_string
         return cls.get_unique_data_code()
-    
+
     @classmethod
     def get_object(cls, temp_data_code):
         """
@@ -156,6 +159,6 @@ class UserAccountTempData(models.Model):
         if not self.temp_data_code:
             self.temp_data_code = self.get_unique_data_code()
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return self.temp_data_code
