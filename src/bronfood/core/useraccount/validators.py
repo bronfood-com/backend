@@ -1,4 +1,7 @@
+import re
+
 from django.core import validators
+from django.core.exceptions import ValidationError
 
 
 class FullnameValidator(validators.RegexValidator):
@@ -19,16 +22,20 @@ class KazakhstanPhoneNumberValidator(validators.RegexValidator):
     flags = 0
 
 
-class PasswordValidator(validators.RegexValidator):
-    regex = r'^[A-Za-z!@#$%^&*()-_+=<>?]{4,20}$'
-    message = (
-        'Password must be 4 to 20 characters and contain '
-        'only Latin letters and the allowed symbols: !@#$%^&*()-_+=<>?'
-    )
-    flags = 0
-
-
 class ConfirmationValidator(validators.RegexValidator):
     regex = r'^\d{4}$'
     message = 'Input 4 digits.'
     flags = 0
+
+
+def validate_password(value):
+    regex = '^[\w@!]+\Z'  # noqa
+    if re.search(regex, value) is None:
+        unmatch_symbols = ' '.join(set(
+            symbol for symbol in value if not re.match(regex, symbol)
+        ))
+        raise ValidationError(
+            'Password error.'
+            f'Simbols {unmatch_symbols} are not allowed to be used'
+        )
+    return value
