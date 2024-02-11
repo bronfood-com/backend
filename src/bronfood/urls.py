@@ -32,7 +32,6 @@ urlpatterns = [
 ]
 
 
-
 schema_view = get_schema_view(
     openapi.Info(
         title="bronfood.com API",

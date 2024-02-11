@@ -4,9 +4,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from bronfood.api.client.serializers import (
-    ClientRequestRegistrationSerializer,
-    TempDataCodeSerializer, ConfirmationCodeSerializer,
-    TempDataSerializer)
+    ClientRequestRegistrationSerializer, ConfirmationCodeSerializer,
+    TempDataCodeSerializer, TempDataSerializer)
 from bronfood.api.client.utils import error_data, success_data
 from bronfood.api.views import BaseAPIView
 from bronfood.core.client.models import Client, UserAccount
@@ -94,6 +93,12 @@ class ClientRegistrationView(BaseAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        if confirmation_code != CONFIRMATION_CODE:
+            return Response(
+                data=error_data('incorrect confirmation_code'),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         client = temp_data.user
         # TODO: добавить проверку кода подтверждения у клиента.
         # если есть активный код подтверждения у клиента
@@ -156,35 +161,33 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
     serializer_class = TempDataSerializer
 
     def post(self, request):
-
-        temp_data_obj = UserAccountTempData.get_object(
-            temp_data_code=request.data.get('temp_data_code'))
+        data = request.data
+        temp_data_obj = UserAccountTempData.get_object(data['temp_data_code'])
         if not temp_data_obj:
             return Response(
-                data=error_data('Validation error'),
+                data=error_data('incorrect temp_data_code'),
                 status=status.HTTP_400_BAD_REQUEST
             )
-        client_id = temp_data_obj.user.id
-
-        data = request.data
-        data['user'] = client_id
-
-        # TODO тут настроить обработку направленного в сериализатор
-        # по новой схеме
-
+        data['user'] = temp_data_obj.user.id
         temp_data_serializer = self.serializer_class(
             data=data
         )
         if not temp_data_serializer.is_valid():
+            # Получение всех сообщений об ошибках из сериализатора
+            errors = [
+                error
+                for error_list in temp_data_serializer.errors.values()
+                for error in error_list
+            ]
             return Response(
-                data=error_data('Validation error'),
+                data=error_data(errors),
                 status=status.HTTP_400_BAD_REQUEST
             )
         # Создание временных данных
         temp_data_serializer.save()
 
-        # TODO: создание СМС с нужной причиной в объекте клинта
-        # и отправка на телефон
+        # # TODO: создание СМС с нужной причиной в объекте клинта
+        # # и отправка на телефон
 
         response_data = {
             'temp_data_code': temp_data_serializer.instance.temp_data_code}
@@ -201,24 +204,48 @@ class ClientChangePasswordCompleteView(BaseAPIView):
     """
 
     def patch(self, request):
-        # TODO добавить сериализатор для кода
+        temp_data_code = request.data.get('temp_data_code')
         confirmation_code = request.data.get('confirmation_code')
+        temp_serializer = TempDataCodeSerializer(
+            data={'temp_data_code': temp_data_code})
+        confirmation_serializer = ConfirmationCodeSerializer(
+            data={'code': confirmation_code})
 
-        error_message = None
-        if confirmation_code != CONFIRMATION_CODE:
-            error_message = 'Validation error'
+        temp_errors = []
+        confirmation_errors = []
 
-        temp_data_obj = UserAccountTempData.get_object(
-            temp_data_code=request.data.get('temp_data_code'))
-
-        if not temp_data_obj:
-            error_message = 'Validation error'
-
-        if error_message:
+        if not temp_serializer.is_valid():
+            temp_errors = [
+                error
+                for error_list in temp_serializer.errors.values()
+                for error in error_list
+            ]
+        if not confirmation_serializer.is_valid():
+            confirmation_errors = [
+                error
+                for error_list in confirmation_serializer.errors.values()
+                for error in error_list
+            ]
+        errors = temp_errors + confirmation_errors
+        if errors:
             return Response(
-                data=error_data(error_message),
+                data=error_data(errors),
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        temp_data_obj = UserAccountTempData.get_object(temp_data_code)
+        if not temp_data_obj:
+            return Response(
+                data=error_data('incorrect temp_data_code'),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if confirmation_code != CONFIRMATION_CODE:
+            return Response(
+                data=error_data('incorrect confirmation_code'),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         client = temp_data_obj.user
         # Преобразуем объект temp_data в словарь с использованием сериализатора
         temp_data_serializer = TempDataSerializer(temp_data_obj)
@@ -253,22 +280,33 @@ class ClientProfileView(BaseAPIView):
                         status=status.HTTP_200_OK)
 
     def patch(self, request):
-        # TODO добавить сериализатор для кода
         confirmation_code = request.data.get('confirmation_code')
+        confirmation_serializer = ConfirmationCodeSerializer(
+            data={'code': confirmation_code})
 
-        error_message = None
+        if not confirmation_serializer.is_valid():
+            # Получение всех сообщений об ошибках из сериализатора
+            errors = [
+                error
+                for error_list in confirmation_serializer.errors.values()
+                for error in error_list
+            ]
+            return Response(
+                data=error_data(errors),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         if confirmation_code != CONFIRMATION_CODE:
-            error_message = 'Validation error'
+            return Response(
+                data=error_data('incorrect confirmation_code'),
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         temp_data_obj = UserAccountTempData.objects.filter(
             user=self.current_client.id).first()
-
         if not temp_data_obj:
-            error_message = 'Validation error'
-
-        if error_message:
             return Response(
-                data=error_data(error_message),
+                data=error_data('incorrect temp_data_code'),
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -305,9 +343,14 @@ class ClientRequestProfileUpdateView(BaseAPIView):
             data=data
         )
         if not temp_data_serializer.is_valid():
-            # TODO внести валидацию на этом уровне
+            # Получение всех сообщений об ошибках из сериализатора
+            errors = [
+                error
+                for error_list in temp_data_serializer.errors.values()
+                for error in error_list
+            ]
             return Response(
-                data=error_data('Validation error'),
+                data=error_data(errors),
                 status=status.HTTP_400_BAD_REQUEST
             )
         # Создание временных данных

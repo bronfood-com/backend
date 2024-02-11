@@ -1,13 +1,13 @@
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.views import APIView
 from djoser import utils
 from djoser.conf import settings
 from djoser.views import TokenCreateView
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from bronfood.core.client.models import Client
 from bronfood.api.client.utils import success_data
+from bronfood.core.client.models import Client
 
 
 @api_view(['GET'])
