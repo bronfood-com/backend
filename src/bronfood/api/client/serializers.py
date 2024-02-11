@@ -148,30 +148,6 @@ class ClientLoginSerializer(serializers.Serializer):
         return data
 
 
-class ClientUpdateSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для обновления профиля клиента.
-    """
-    password = serializers.CharField(
-        required=False,
-        # validators=[PasswordValidator()]
-    )
-    phone = serializers.CharField(
-        required=False,
-        validators=[KazakhstanPhoneNumberValidator()]
-    )
-    fullname = serializers.CharField(
-        required=False,
-        validators=[FullnameValidator()]
-    )
-
-    class Meta:
-        model = Client
-        fields = ['password',
-                  'phone',
-                  'fullname']
-
-
 class TempDataCodeSerializer(serializers.ModelSerializer):
     temp_data_code = serializers.CharField(
         validators=[validate_temp_data_code]
