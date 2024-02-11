@@ -88,7 +88,7 @@ class TempDataSerializer(serializers.ModelSerializer):
                   'password_confirm',
                   'fullname',
                   'phone',
-                  'user'
+                  'user',
                   ]
 
     def create(self, validated_data):
@@ -194,3 +194,53 @@ class ConfirmationCodeSerializer(serializers.ModelSerializer):
         fields = [
             'code',
         ]
+
+
+class ChangePasswordSerializer(serializers.ModelSerializer):
+    temp_data_code = serializers.CharField(
+        validators=[validate_temp_data_code]
+    )
+    password = serializers.CharField(
+        validators=[
+            validators.MinLengthValidator(4),
+            validators.MaxLengthValidator(20),
+            validate_password,
+        ],
+        write_only=True,
+    )
+    password_confirm = serializers.CharField(
+        validators=[
+            validators.MinLengthValidator(4),
+            validators.MaxLengthValidator(20),
+            validate_password,
+        ],
+        write_only=True,
+    )
+    user = serializers.PrimaryKeyRelatedField(
+        queryset=UserAccount.objects.all(),
+        required=False)
+
+    class Meta:
+        model = UserAccountTempData
+        fields = [
+            'temp_data_code',
+            'password',
+            'password_confirm',
+            'user'
+        ]
+
+    def validate(self, data):
+        password = data.get('password')
+        password_confirm = data.get('password_confirm')
+
+        if password or password_confirm:
+            if password != password_confirm:
+                raise serializers.ValidationError(
+                    'Рasswords do not match')
+        return data
+
+    def create(self, validated_data):
+        user = validated_data.pop('user')
+        temp_data = UserAccountTempData.objects.create_temp_data(
+            user=user, **validated_data)
+        return temp_data

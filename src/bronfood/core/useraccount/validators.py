@@ -68,5 +68,3 @@ def validate_confirmation_code(value):
         raise ValidationError(
             'Confirmation code can only contain digits.'
         )
-
-# нужен ли общий валидатор что передаваемые данные строка?
