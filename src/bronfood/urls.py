@@ -29,7 +29,8 @@ urlpatterns = [
     path('healthcheck/', healthcheck),
     path('client/', include('bronfood.api.client.urls', namespace='client')),
     path('signin/', CustomTokenCreateView.as_view(), name="signin"),
-    path('api/v1/', include('bronfood.core.payment_requisites.urls')),
+    # BUG пути ниже не сущесвует, если раскоментить все падает
+    # path('api/v1/', include('bronfood.core.payment_requisites.urls')),
 ]
 
 
