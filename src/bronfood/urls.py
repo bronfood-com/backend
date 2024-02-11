@@ -27,7 +27,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('healthcheck/', healthcheck),
     path('client/', include('bronfood.api.client.urls', namespace='client')),
-    re_path(r"^signin/?$", CustomTokenCreateView.as_view(), name="signin"),
+    path('signin/', CustomTokenCreateView.as_view(), name="signin"),
 ]
 
 

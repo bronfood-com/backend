@@ -1,12 +1,12 @@
-from rest_framework.test import APIClient
+from django.contrib.auth.hashers import check_password
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient, APITestCase
+
+from bronfood.api.client.serializers import ClientRequestRegistrationSerializer
 from bronfood.core.client.models import Client
 from bronfood.core.useraccount.models import UserAccount, UserAccountTempData
-from django.contrib.auth.hashers import check_password
-from bronfood.api.client.serializers import ClientRequestRegistrationSerializer
-from rest_framework.authtoken.models import Token
 
 
 class ClientApiTests(APITestCase):
@@ -14,12 +14,11 @@ class ClientApiTests(APITestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        
 
-        # Данные для авторизованного и активированного клиента 
+        # Данные для авторизованного и активированного клиента
         cls.data_authorized_client = {
             'password': 'password',
-            'phone': '7000000002',
+            'phone': '70000000002',
             'fullname': 'Client in DB'}
         serializer = ClientRequestRegistrationSerializer(
             data=cls.data_authorized_client)
@@ -30,20 +29,19 @@ class ClientApiTests(APITestCase):
         # Создадим токен для авторизации
         cls.token = Token.objects.create(user=cls.user)
 
-
-        # Данные для неавторизованного и активированного клиента 
+        # Данные для неавторизованного и активированного клиента
         cls.data_to_signin = {'password': 'password',
-                              'phone': '7000000000',
+                              'phone': '70000000000',
                               'fullname': 'New client'}
         serializer = ClientRequestRegistrationSerializer(
             data=cls.data_to_signin)
         serializer.is_valid()
         cls.client_to_signin = serializer.save()
         cls.client_to_signin.status = UserAccount.Status.CONFIRMED
-    
-        # Данные неавторизованного и неактивированного клиента 
+
+        # Данные неавторизованного и неактивированного клиента
         cls.data_inactive = {'password': 'superpassword',
-                             'phone': '7000000005',
+                             'phone': '70000000005',
                              'fullname': 'Client to activate'}
         serializer = ClientRequestRegistrationSerializer(
             data=cls.data_inactive)
@@ -51,7 +49,7 @@ class ClientApiTests(APITestCase):
         cls.client_inactive = serializer.save()
         cls.temp_obj_inctive = (
             UserAccountTempData.objects.create(
-                user = cls.client_inactive
+                user=cls.client_inactive
             )
         )
         cls.activation_data = {
@@ -59,11 +57,10 @@ class ClientApiTests(APITestCase):
             'confirmation_code': '0000'
         }
 
-
     def setUp(self):
         # Создаем неавторизованый клиент
         self.guest = APIClient()
-        
+
         # Создаем авторизованый клиент
         self.authorized_client = APIClient()
         self.authorized_client.credentials(
@@ -72,7 +69,7 @@ class ClientApiTests(APITestCase):
         # Данные для создания клиента при его регистрации
         self.registration_data = {
             'password': 'password',
-            'phone': '7000000001',
+            'phone': '70000000001',
             'fullname': 'Registered client'
         }
 
@@ -95,7 +92,7 @@ class ClientApiTests(APITestCase):
         self.assertEqual(Client.objects.count(),
                          count_clients_before + 1,
                          'Client not created')
-        
+
         registered_client = Client.objects.get(
             phone=self.registration_data['phone'])
 
@@ -104,15 +101,17 @@ class ClientApiTests(APITestCase):
             self.registration_data['fullname'],
             'Client fullname error')
 
-        is_password_correct = check_password(self.registration_data['password'],
-                                             registered_client.password)
+        is_password_correct = check_password(
+            self.registration_data['password'],
+            registered_client.password
+        )
         self.assertTrue(is_password_correct,
                         'Password hash error')
-        
+
         self.assertEqual(
             registered_client.role, 'CLIENT',
             'User role is not Client')
-        
+
         client_temp_data_code = (
             UserAccountTempData.objects.filter(
                 user=registered_client.id).first().temp_data_code
@@ -126,7 +125,6 @@ class ClientApiTests(APITestCase):
         self.assertEqual(response.data,
                          expected_data,
                          'Response data format error')
-
 
     def test_signup(self):
         """
@@ -150,9 +148,9 @@ class ClientApiTests(APITestCase):
         self.assertEqual(status_client_after,
                          UserAccount.Status.CONFIRMED,
                          'Client status does not cofirmed')
-        
+
         token = Token.objects.filter(user=self.client_inactive).first()
-        
+
         expected_data = {
             'status': 'success',
             'data': {
@@ -164,7 +162,6 @@ class ClientApiTests(APITestCase):
         self.assertEqual(response.data,
                          expected_data,
                          'Response data format error')
-
 
     def test_get_profile(self):
         """
@@ -183,11 +180,10 @@ class ClientApiTests(APITestCase):
         self.assertEqual(response.data,
                          expected_data,
                          'Response data error')
-        
+
         # неавторизованное обращение
         response = self.guest.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
 
     def test_profile_update_request(self):
         """
@@ -198,7 +194,7 @@ class ClientApiTests(APITestCase):
             'password': 'superpuper',
             'password_confirm': 'superpuper',
             'fullname': 'XXX',
-            'phone': '7121212000'
+            'phone': '71212120000'
         }
         url = reverse('client:profile_update_request')
 
@@ -215,7 +211,7 @@ class ClientApiTests(APITestCase):
         )
         self.assertEqual(client_temp_data.fullname, data['fullname'])
         self.assertEqual(client_temp_data.phone, data['phone'])
-        
+
         temp_data_code = client_temp_data.temp_data_code
         expected_data = {
             'status': 'success',
@@ -231,7 +227,6 @@ class ClientApiTests(APITestCase):
                                              hash_password)
         self.assertTrue(is_password_correct)
 
-
     def test_profile_update_confirm(self):
         """
         Ensure that client can confirm update profile.
@@ -243,9 +238,8 @@ class ClientApiTests(APITestCase):
             'phone': '7121212000',
             'user': self.user
         }
-        temp_data_obj = (
-            UserAccountTempData.objects.create(**temp_data_values)
-        )
+        UserAccountTempData.objects.create(**temp_data_values)
+
         url = reverse('client:profile')
         # обращение авторизованного клиента
         response = self.authorized_client.patch(
@@ -260,7 +254,6 @@ class ClientApiTests(APITestCase):
         self.assertEqual(response.data,
                          expected_data,
                          'Response data format error')
-
 
     def test_signout(self):
         """
@@ -288,7 +281,6 @@ class ClientApiTests(APITestCase):
         self.assertFalse(is_token_after_signout,
                          "Token should not exist after signout")
 
-
     def test_signin(self):
         """
         Ensure signin client.
@@ -303,7 +295,7 @@ class ClientApiTests(APITestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         client = Client.objects.get(phone=self.data_to_signin['phone'])
         token = Token.objects.filter(user=client).first()
         expected_data = {
@@ -318,7 +310,7 @@ class ClientApiTests(APITestCase):
         self.assertEqual(response.data,
                          expected_data,
                          'Response data error')
-        
+
         # некорректное обращение
         response = self.guest.post(
             url,
@@ -327,7 +319,6 @@ class ClientApiTests(APITestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
 
     def test_change_password_request(self):
         """
@@ -356,7 +347,6 @@ class ClientApiTests(APITestCase):
                          expected_data,
                          'Response data format error')
 
-
         wrong_data = {'phone': '7111111111'}
         response = self.guest.post(url,
                                    data=wrong_data,
@@ -367,7 +357,6 @@ class ClientApiTests(APITestCase):
             'Wrong phone can start change_password_request'
         )
 
-
     def test_change_password_confirmation(self):
         """
         Ensure unauthorized client send confirmation code
@@ -375,7 +364,7 @@ class ClientApiTests(APITestCase):
         """
         temp_data_code = (
             UserAccountTempData.objects.create(
-                user = self.client_to_signin,
+                user=self.client_to_signin,
             )
         ).temp_data_code
 
@@ -413,10 +402,10 @@ class ClientApiTests(APITestCase):
         """
         temp_data_code = (
             UserAccountTempData.objects.create(
-                user = self.client_to_signin,
+                user=self.client_to_signin,
             )
         ).temp_data_code
-        
+
         url = reverse('client:change_password_complete')
 
         data = {
@@ -428,7 +417,7 @@ class ClientApiTests(APITestCase):
                                     format='json')
         self.assertEqual(response.status_code,
                          status.HTTP_200_OK)
-        
+
         expected_data = {
             'status': 'success',
             'data': {
