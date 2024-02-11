@@ -40,7 +40,6 @@ ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     'bronfood.core.client.apps.ClientConfig',
     'bronfood.core.payment_requisites.apps.PaymentRequisitesConfig',
-    'bronfood.core.phone.apps.PhoneConfig',
     'bronfood.core.useraccount.apps.UseraccountConfig',
     'bronfood.api.apps.ApiConfig',
     'bronfood.core.restaurant_owner.apps.RestaurantOwnerConfig',
@@ -100,12 +99,6 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT')
     }
 }
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

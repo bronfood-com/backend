@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from bronfood.api.client.serializers import (
-    ClientRequestRegistrationSerializer, ConfirmationCodeSerializer,
+    ClientRequestRegistrationSerializer,
     TempDataCodeSerializer, TempDataSerializer)
 from bronfood.api.client.utils import error_data, success_data
 from bronfood.api.views import BaseAPIView
@@ -61,26 +61,13 @@ class ClientRegistrationView(BaseAPIView):
         confirmation_code = request.data.get('confirmation_code')
         temp_serializer = TempDataCodeSerializer(
             data={'temp_data_code': temp_data_code})
-        confirmation_serializer = ConfirmationCodeSerializer(
-            data={'code': confirmation_code})
-
-        temp_errors = []
-        confirmation_errors = []
 
         if not temp_serializer.is_valid():
-            temp_errors = [
+            errors = [
                 error
                 for error_list in temp_serializer.errors.values()
                 for error in error_list
             ]
-        if not confirmation_serializer.is_valid():
-            confirmation_errors = [
-                error
-                for error_list in confirmation_serializer.errors.values()
-                for error in error_list
-            ]
-        errors = temp_errors + confirmation_errors
-        if errors:
             return Response(
                 data=error_data(errors),
                 status=status.HTTP_400_BAD_REQUEST
@@ -208,26 +195,13 @@ class ClientChangePasswordCompleteView(BaseAPIView):
         confirmation_code = request.data.get('confirmation_code')
         temp_serializer = TempDataCodeSerializer(
             data={'temp_data_code': temp_data_code})
-        confirmation_serializer = ConfirmationCodeSerializer(
-            data={'code': confirmation_code})
-
-        temp_errors = []
-        confirmation_errors = []
 
         if not temp_serializer.is_valid():
-            temp_errors = [
+            errors = [
                 error
                 for error_list in temp_serializer.errors.values()
                 for error in error_list
             ]
-        if not confirmation_serializer.is_valid():
-            confirmation_errors = [
-                error
-                for error_list in confirmation_serializer.errors.values()
-                for error in error_list
-            ]
-        errors = temp_errors + confirmation_errors
-        if errors:
             return Response(
                 data=error_data(errors),
                 status=status.HTTP_400_BAD_REQUEST
@@ -281,21 +255,6 @@ class ClientProfileView(BaseAPIView):
 
     def patch(self, request):
         confirmation_code = request.data.get('confirmation_code')
-        confirmation_serializer = ConfirmationCodeSerializer(
-            data={'code': confirmation_code})
-
-        if not confirmation_serializer.is_valid():
-            # Получение всех сообщений об ошибках из сериализатора
-            errors = [
-                error
-                for error_list in confirmation_serializer.errors.values()
-                for error in error_list
-            ]
-            return Response(
-                data=error_data(errors),
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         if confirmation_code != CONFIRMATION_CODE:
             return Response(
                 data=error_data('incorrect confirmation_code'),
