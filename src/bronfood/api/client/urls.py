@@ -1,4 +1,4 @@
-from django.urls import path, re_path
+from django.urls import path
 from djoser.views import TokenDestroyView
 
 from .views import (ClientChangePasswordCompleteView,
@@ -33,5 +33,5 @@ urlpatterns = [
 
 # Token
 urlpatterns += [
-    re_path(r"^signout/?$", TokenDestroyView.as_view(), name="signout"),
+    path('signout/', TokenDestroyView.as_view(), name="signout"),
 ]
