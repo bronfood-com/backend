@@ -223,16 +223,9 @@ class ClientChangePasswordCompleteView(BaseAPIView):
         client = temp_data_obj.user
         # Преобразуем объект temp_data в словарь с использованием сериализатора
         temp_data_serializer = TempDataSerializer(temp_data_obj)
-
         data = temp_data_serializer.data
-        data.pop('user')
-        # Избегаем передачи атрибутов с None
-        data = {key: value for key, value in data.items() if value is not None}
-
-        # Обновляем данные у текущего клиента
-        client.__dict__.update(data)
-        client.save()
-
+        # обновляем данные клиента
+        client.update_from_dict(data)
         return Response(success_data({'message': 'Password updated'}),
                         status=status.HTTP_200_OK)
 
@@ -273,14 +266,8 @@ class ClientProfileView(BaseAPIView):
         # Преобразуем объект temp_data в словарь с использованием сериализатора
         temp_data_serializer = TempDataSerializer(temp_data_obj)
         data = temp_data_serializer.data
-
-        data.pop('user')
-        # Избегаем передачи атрибутов с None
-        data = {key: value for key, value in data.items() if value is not None}
-
-        # Обновляем данные у текущего клиента
-        client.__dict__.update(data)
-        client.save()
+        # Обновляем данные клиента
+        client.update_from_dict(data)
         return Response(
             success_data({'message': 'Profile updated successfully'}),
             status=status.HTTP_200_OK)

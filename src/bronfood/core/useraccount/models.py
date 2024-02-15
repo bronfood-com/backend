@@ -76,6 +76,12 @@ class UserAccount(AbstractBaseUser):
             self.role = UserAccount.Role.CLIENT
         return super().save(*args, **kwargs)
 
+    def update_from_dict(self, data):
+        for key, value in data.items():
+            if hasattr(self, key) and value is not None:
+                setattr(self, key, value)
+        self.save()
+
     @property
     def is_staff(self):
         return self.role == UserAccount.Role.ADMIN

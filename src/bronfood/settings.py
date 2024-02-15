@@ -166,8 +166,5 @@ REST_FRAMEWORK = {
     'TEST_REQUEST_DEFAULT_FORMAT': 'json'
 }
 
-# CORS_ALLOWED_ORIGINS = [
-#     'http://localhost:5173',
-# ]
-
+# NOTE ТОЛЬКО В РАЗРАБОТКЕ!
 CORS_ALLOW_ALL_ORIGINS = True
