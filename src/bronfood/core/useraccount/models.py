@@ -153,13 +153,7 @@ class UserAccountTempData(models.Model):
         """
         получение объекта хранения данных по коду.
         """
-        try:
-            temp_data_obj = UserAccountTempData.objects.get(
-                temp_data_code=temp_data_code)
-            return temp_data_obj
-        except cls.DoesNotExist:
-            temp_data_obj = None
-            return temp_data_obj
+        return cls.objects.filter(temp_data_code=temp_data_code).first()
 
     def save(self, *args, **kwargs):
         if not self.temp_data_code:
