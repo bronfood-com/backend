@@ -1,7 +1,7 @@
 # custom auth_backends.py
 
 from django.contrib.auth.backends import BaseBackend
-from .models import CustomUser
+from django.contrib.auth import get_user_model
 
 
 class PhoneBackend(BaseBackend):
@@ -10,8 +10,9 @@ class PhoneBackend(BaseBackend):
     """
 
     def authenticate(self, request, username=None, password=None):
+        User = get_user_model()
         try:
-            user = CustomUser.objects.get(username=username)
+            user = User.objects.get(username=username)
             if user.check_password(password):
                 return user
             else:
