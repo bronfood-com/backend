@@ -159,8 +159,8 @@ paths:
 
   /change_password/confirmation/:
     post:
-      operationId: request_change_password
-      summary: request_change_password
+      operationId: change_password_confirmation
+      summary: change_password_confirmation
       description: |-
         Запрос на смену пароля.
       parameters:
@@ -324,7 +324,7 @@ paths:
       - client
     parameters: []
 
-  /profile/update_request/:
+  /client/profile/update_request/:
     post:
       operationId: request_profile_update
       summary: request_profile_update
