@@ -273,9 +273,14 @@ paths:
               data:
                 type: object
                 properties:
+                  fullname:
+                    type: string
                   phone:
                     type: string
-                  fullname:
+                  role:
+                    type: string
+                    example: CLIENT
+                  auth_token:
                     type: string
       tags:
       - client
@@ -305,9 +310,15 @@ paths:
               data:
                 type: object
                 properties:
-                  message:
+                  fullname:
                     type: string
-                    example: Profile updated successfully
+                  phone:
+                    type: string
+                  role:
+                    type: string
+                    example: CLIENT
+                  auth_token:
+                    type: string
 
         '400':
           description: Validation error
