@@ -173,10 +173,13 @@ class ClientApiTests(APITestCase):
         expected_data = {
             'status': 'success',
             'data': {
+                "fullname": self.data_authorized_client['fullname'],
                 "phone": self.data_authorized_client['phone'],
-                "fullname": self.data_authorized_client['fullname']
+                "role": 'CLIENT',
+                "auth_token": self.token.key,
             }
         }
+
         self.assertEqual(response.data,
                          expected_data,
                          'Response data error')
@@ -245,12 +248,17 @@ class ClientApiTests(APITestCase):
         response = self.authorized_client.patch(
             url, self.confirmation_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
         expected_data = {
             'status': 'success',
             'data': {
-                'message': 'Profile updated successfully'
+                "fullname": temp_data_values['fullname'],
+                "phone": temp_data_values['phone'],
+                "role": 'CLIENT',
+                "auth_token": self.token.key,
             }
         }
+
         self.assertEqual(response.data,
                          expected_data,
                          'Response data format error')

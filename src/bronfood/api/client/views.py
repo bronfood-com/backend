@@ -240,8 +240,10 @@ class ClientProfileView(BaseAPIView):
 
     def get(self, request):
         response_data = {
-            'phone': self.current_client.phone,
             'fullname': self.current_client.fullname,
+            'phone': self.current_client.phone,
+            'role': self.current_client.role,
+            'auth_token': self.current_client.auth_token.key,
         }
         return Response(success_data(response_data),
                         status=status.HTTP_200_OK)
@@ -268,8 +270,16 @@ class ClientProfileView(BaseAPIView):
         data = temp_data_serializer.data
         # Обновляем данные клиента
         client.update_from_dict(data)
+
+        response_data = {
+            'fullname': client.fullname,
+            'phone': client.phone,
+            'role': client.role,
+            'auth_token': client.auth_token.key
+        }
+
         return Response(
-            success_data({'message': 'Profile updated successfully'}),
+            success_data(response_data),
             status=status.HTTP_200_OK)
 
 
