@@ -50,7 +50,7 @@ class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if Client.objects.filter(phone=data.get('phone')).exists():
             raise serializers.ValidationError(
-                'Phone number is already exists.'
+                'phoneNumberIsAlreadyUsed'
             )
         return data
 
@@ -107,7 +107,7 @@ class TempDataSerializer(serializers.ModelSerializer):
                     'Рasswords do not match')
         if Client.objects.filter(phone=data.get('phone')).exists():
             raise serializers.ValidationError(
-                'Phone number exist'
+                'phoneNumberIsAlreadyUsed'
             )
         password_confirm = data.pop('password_confirm')
         return data
