@@ -33,14 +33,13 @@ class Dish(models.Model):
         'Размер блюда',
         max_length=2,
         choices=SizeOfDish.choices,
-        default=SizeOfDish.L
+        default=SizeOfDish.LARGE
     )
     wait = models.PositiveIntegerField('Время ожидания')
     tags = models.CharField('Теги', max_length=50)
-    complement = models.ForeignKey(
+    complement = models.ManyToManyField(
         Complement,
         verbose_name='Дополнения',
-        on_delete=models.CASCADE
     )
 
     def __str__(self):
@@ -81,7 +80,7 @@ class Restaurant(models.Model):
     type_of_shop = models.CharField(
         max_length=2,
         choices=TypeOfShop.choices,
-        default=TypeOfShop.FF,
+        default=TypeOfShop.FASTFOOD,
     )
 
     def __str__(self):
@@ -108,13 +107,13 @@ class Favorite(models.Model):
         verbose_name_plural = 'Избранные блюда'
         constraints = [
             UniqueConstraint(
-                fields=['user', 'recipe'],
-                name="unique_favorite"
+                fields=['user', 'dish'],
+                name="unique_dish"
             )
         ]
 
         def __str__(self):
-            return f"{self.user.name} likes {self.recipe.name}"
+            return f"{self.user.name} likes {self.dish.name}"
 
 
 class ShopingCart(models.Model):
