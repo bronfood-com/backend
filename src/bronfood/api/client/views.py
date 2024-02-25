@@ -82,7 +82,7 @@ class ClientRegistrationView(BaseAPIView):
 
         if confirmation_code != CONFIRMATION_CODE:
             return Response(
-                data=error_data('incorrect confirmation_code'),
+                data=error_data('invalidConformationCode'),
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -216,7 +216,7 @@ class ClientChangePasswordCompleteView(BaseAPIView):
 
         if confirmation_code != CONFIRMATION_CODE:
             return Response(
-                data=error_data('incorrect confirmation_code'),
+                data=error_data('invalidConformationCode'),
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -252,7 +252,7 @@ class ClientProfileView(BaseAPIView):
         confirmation_code = request.data.get('confirmation_code')
         if confirmation_code != CONFIRMATION_CODE:
             return Response(
-                data=error_data('incorrect confirmation_code'),
+                data=error_data('invalidConformationCode'),
                 status=status.HTTP_400_BAD_REQUEST
             )
 
