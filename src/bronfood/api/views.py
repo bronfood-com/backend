@@ -1,13 +1,13 @@
-from djoser import utils
-from djoser.conf import settings
-from djoser.views import TokenCreateView
+from django.contrib.auth.hashers import check_password
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.authtoken.models import Token
 
-from bronfood.api.client.utils import success_data
-from bronfood.core.client.models import Client
+from bronfood.api.client.utils import success_data, error_data
+from bronfood.core.client.models import Client, UserAccount
+from bronfood.api.client.serializers import ClientLoginSerializer
 
 
 @api_view(['GET'])
@@ -24,19 +24,39 @@ class BaseAPIView(APIView):
         return Client.objects.get(pk=self.request.user.pk)
 
 
-class CustomTokenCreateView(TokenCreateView):
+class CustomTokenCreateView(APIView):
     """
-    Custom token creation view with additional data.
+    Token creation view.
     """
-    def _action(self, serializer):
-        token = utils.login_user(self.request, serializer.user)
-        token_serializer_class = settings.SERIALIZERS.token
-        response_data = token_serializer_class(token).data
-        additional_data = {
+    serializer_class = ClientLoginSerializer
+
+    def post(self, request):
+        user_signin_serializer = self.serializer_class(data=request.data)
+        if not user_signin_serializer.is_valid():
+            return Response(
+                data=error_data('invalidCredentials'),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            # нахожу пользователя
+            user = UserAccount.objects.get(phone=request.data['phone'])
+            # проверяю передан ли пароль пользователя
+            if not check_password(request.data['password'],
+                                  user.password):
+                raise Exception
+        except Exception:
+            return Response(
+                data=error_data('invalidCredentials'),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # присваиваю пользователю токен
+        token, created = Token.objects.get_or_create(user=user)
+        # отдаю результата
+        data = {
             'fullname': token.user.fullname,
             'phone': token.user.phone,
             'role': token.user.role,
+            'auth_token': token.key
         }
-        response_data.update(additional_data)
-        return Response(success_data(response_data),
+        return Response(success_data(data),
                         status=status.HTTP_200_OK)
