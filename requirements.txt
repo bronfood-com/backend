@@ -3,7 +3,7 @@ certifi==2023.11.17
 charset-normalizer==3.3.2
 click==8.1.7
 colorama==0.4.6
-Django==4.2.7
+Django==4.2.10
 djangorestframework==3.14.0
 drf-yasg==1.21.7
 gunicorn==21.2.0
