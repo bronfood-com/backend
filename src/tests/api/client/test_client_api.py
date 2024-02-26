@@ -361,7 +361,7 @@ class ClientApiTests(APITestCase):
                                    format='json')
         self.assertEqual(
             response.status_code,
-            status.HTTP_404_NOT_FOUND,
+            status.HTTP_400_BAD_REQUEST,
             'Wrong phone can start change_password_request'
         )
 

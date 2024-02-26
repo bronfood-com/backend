@@ -47,12 +47,13 @@ class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
             user.save(update_fields=['password'])
         return user
 
-    def validate(self, data):
-        if Client.objects.filter(phone=data.get('phone')).exists():
-            raise serializers.ValidationError(
-                'phoneNumberIsAlreadyUsed'
-            )
-        return data
+    # TODO уточнить у фронтов следует ли отдельный ответ на это давать?
+    # def validate(self, data):
+    #     if Client.objects.filter(phone=data.get('phone')).exists():
+    #         raise serializers.ValidationError(
+    #             'phoneNumberIsAlreadyUsed'
+    #         )
+    #     return data
 
 
 class TempDataSerializer(serializers.ModelSerializer):
@@ -208,3 +209,13 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         temp_data = UserAccountTempData.objects.create_temp_data(
             user=user, **validated_data)
         return temp_data
+
+
+class PhoneValidationSerializer(serializers.Serializer):
+    """
+    Сериалайзер для проверки валидности номера телефона.
+    """
+
+    phone = serializers.CharField(
+        validators=[KazakhstanPhoneNumberValidator()]
+    )

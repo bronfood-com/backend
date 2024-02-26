@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from bronfood.api.client.serializers import (
     ClientRequestRegistrationSerializer,
-    TempDataCodeSerializer, TempDataSerializer)
+    TempDataCodeSerializer, TempDataSerializer, PhoneValidationSerializer)
 from bronfood.api.client.utils import error_data, success_data
 from bronfood.api.views import BaseAPIView
 from bronfood.core.client.models import Client, UserAccount
@@ -24,16 +24,17 @@ class ClientRequestRegistrationView(BaseAPIView):
     def post(self, request):
         client_serializer = self.serializer_class(data=request.data)
         if not client_serializer.is_valid():
-            # Получение всех сообщений об ошибках из сериализатора
-            errors = [
-                error
-                for error_list in client_serializer.errors.values()
-                for error in error_list
-            ]
             return Response(
-                data=error_data(errors),
+                data=error_data('ValidationError'),
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        elif Client.objects.filter(phone=request.data['phone']).exists():
+            return Response(
+                data=error_data('phoneNumberIsAlreadyUsed'),
+                status=status.HTTP_409_CONFLICT
+            )
+
         # Создание неподтвержденного клиента
         client_serializer.save()
         client = client_serializer.instance
@@ -62,28 +63,18 @@ class ClientRegistrationView(BaseAPIView):
         temp_serializer = TempDataCodeSerializer(
             data={'temp_data_code': temp_data_code})
 
-        if not temp_serializer.is_valid():
-            errors = [
-                error
-                for error_list in temp_serializer.errors.values()
-                for error in error_list
-            ]
-            return Response(
-                data=error_data(errors),
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         temp_data = UserAccountTempData.get_object(temp_data_code)
-        if not temp_data:
+
+        if not temp_serializer.is_valid() or not temp_data:
             return Response(
-                data=error_data('incorrect temp_data_code'),
+                data=error_data('ValidationError'),
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         if confirmation_code != CONFIRMATION_CODE:
             return Response(
                 data=error_data('invalidConformationCode'),
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_404_NOT_FOUND
             )
 
         client = temp_data.user
@@ -112,15 +103,23 @@ class ClientChangePasswordRequestView(BaseAPIView):
     Отправляет телефон.
     Вовращает уникальный код, связанный с объектом клиента.
     """
+    serializer_class = PhoneValidationSerializer
 
     def post(self, request):
+        client_serializer = self.serializer_class(data=request.data)
+        if not client_serializer.is_valid():
+            return Response(
+                data=error_data('ValidationError'),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         client_phone = request.data.get('phone')
         # TODO проверить в сериализаторе, что верный формат телефона
         client = Client.objects.filter(phone=client_phone).first()
 
         if not client:
             return Response(
-                data=error_data('Phone not found'),
+                data=error_data('UserWithThatPhoneNotFound'),
                 status=status.HTTP_404_NOT_FOUND
             )
 
@@ -148,28 +147,22 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
     serializer_class = TempDataSerializer
 
     def post(self, request):
+
+        temp_data_obj = UserAccountTempData.get_object(
+            request.data['temp_data_code']
+        )
+
         data = request.data
-        temp_data_obj = UserAccountTempData.get_object(data['temp_data_code'])
-        if not temp_data_obj:
-            return Response(
-                data=error_data('incorrect temp_data_code'),
-                status=status.HTTP_400_BAD_REQUEST
-            )
         data['user'] = temp_data_obj.user.id
         temp_data_serializer = self.serializer_class(
             data=data
         )
-        if not temp_data_serializer.is_valid():
-            # Получение всех сообщений об ошибках из сериализатора
-            errors = [
-                error
-                for error_list in temp_data_serializer.errors.values()
-                for error in error_list
-            ]
+        if not temp_data_serializer.is_valid() or not temp_data_obj:
             return Response(
-                data=error_data(errors),
+                data=error_data('ValidationError'),
                 status=status.HTTP_400_BAD_REQUEST
             )
+
         # Создание временных данных
         temp_data_serializer.save()
 
@@ -196,28 +189,18 @@ class ClientChangePasswordCompleteView(BaseAPIView):
         temp_serializer = TempDataCodeSerializer(
             data={'temp_data_code': temp_data_code})
 
-        if not temp_serializer.is_valid():
-            errors = [
-                error
-                for error_list in temp_serializer.errors.values()
-                for error in error_list
-            ]
-            return Response(
-                data=error_data(errors),
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         temp_data_obj = UserAccountTempData.get_object(temp_data_code)
-        if not temp_data_obj:
+
+        if not temp_serializer.is_valid() or not temp_data_obj:
             return Response(
-                data=error_data('incorrect temp_data_code'),
+                data=error_data('ValidationError'),
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         if confirmation_code != CONFIRMATION_CODE:
             return Response(
                 data=error_data('invalidConformationCode'),
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_404_NOT_FOUND
             )
 
         client = temp_data_obj.user
@@ -253,14 +236,14 @@ class ClientProfileView(BaseAPIView):
         if confirmation_code != CONFIRMATION_CODE:
             return Response(
                 data=error_data('invalidConformationCode'),
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_404_NOT_FOUND
             )
 
         temp_data_obj = UserAccountTempData.objects.filter(
             user=self.current_client.id).first()
         if not temp_data_obj:
             return Response(
-                data=error_data('incorrect temp_data_code'),
+                data=error_data('NoDataToUpdate'),
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -299,16 +282,11 @@ class ClientRequestProfileUpdateView(BaseAPIView):
             data=data
         )
         if not temp_data_serializer.is_valid():
-            # Получение всех сообщений об ошибках из сериализатора
-            errors = [
-                error
-                for error_list in temp_data_serializer.errors.values()
-                for error in error_list
-            ]
             return Response(
-                data=error_data(errors),
+                data=error_data('ValidationError'),
                 status=status.HTTP_400_BAD_REQUEST
             )
+
         # Создание временных данных
         temp_data_serializer.save()
 

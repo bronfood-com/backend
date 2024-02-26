@@ -49,6 +49,7 @@ paths:
                 properties:
                   temp_data_code:
                     type: string
+                    example: rcgU3D
         '400':
           description: Validation Error
           schema: 
@@ -59,7 +60,19 @@ paths:
                 example: error
               error_message:
                 type: string
-                example: Validation error
+                example: ValidationError
+                
+        '409':
+          description: Conflict error
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: phoneNumberIsAlreadyUsed 
       tags:
       - client
     parameters: []  
@@ -98,7 +111,7 @@ paths:
                     type: string
          
         '400':
-          description: Error
+          description: ValidationError
           schema: 
             type: object
             properties:
@@ -107,7 +120,20 @@ paths:
                 example: error
               error_message:
                 type: string
-                example: Validation error/Invalid_confimation_code/Temp_data_error 
+                example: ValidationError
+        '404':
+          description: invalidConformationCode
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: invalidConformationCode 
+  
+  
       tags:
       - client
     parameters: []  
@@ -141,8 +167,8 @@ paths:
                 properties:
                   temp_data_code:
                     type: string
-        '404':
-          description: Phone not found
+        '400':
+          description: ValidationError
           schema: 
             type: object
             properties:
@@ -151,7 +177,18 @@ paths:
                 example: error
               error_message:
                 type: string
-                example: Phone not found
+                example: ValidationError
+        '404':
+          description: UserWithThatPhoneNotFound
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: UserWithThatPhoneNotFound
       tags:
       - client
     parameters: []      
@@ -192,7 +229,7 @@ paths:
                     type: string
 
         '400':
-          description: Validation error
+          description: ValidationError
           schema: 
             type: object
             properties:
@@ -201,7 +238,7 @@ paths:
                 example: error
               error_message:
                 type: string
-                example: Validation error
+                example: ValidationError
       tags:
       - client
     parameters: []      
@@ -240,7 +277,7 @@ paths:
                     example: Password updated
 
         '400':
-          description: Validation error
+          description: ValidationError
           schema: 
             type: object
             properties:
@@ -249,7 +286,19 @@ paths:
                 example: error
               error_message:
                 type: string
-                example: Validation error
+                example: ValidationError
+        
+        '404':
+          description: invalidConformationCode
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: invalidConformationCode
       tags:
       - client
     parameters: []      
@@ -320,8 +369,8 @@ paths:
                   auth_token:
                     type: string
 
-        '400':
-          description: Validation error
+        '404':
+          description: invalidConformationCode
           schema: 
             type: object
             properties:
@@ -330,7 +379,19 @@ paths:
                 example: error
               error_message:
                 type: string
-                example: Validation error
+                example: invalidConformationCode
+                
+        '400':
+          description: NoDataToUpdate
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: NoDataToUpdate
       tags:
       - client
     parameters: []
@@ -370,8 +431,9 @@ paths:
                 properties:
                   temp_data_code:
                     type: string
+        
         '400':
-          description: Validation error
+          description: ValidationError
           schema: 
             type: object
             properties:
@@ -380,7 +442,7 @@ paths:
                 example: error
               error_message:
                 type: string
-                example: Validation error
+                example: ValidationError
 
       tags:
       - client
@@ -423,6 +485,18 @@ paths:
                   role: 
                     type: string
                     example: CLIENT
+  
+        '400':
+          description: invalidCredentials
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: invalidCredentials
       tags:
       - common
     parameters: []
