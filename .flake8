@@ -1,5 +1,5 @@
 [flake8]
-ignore = D203
+ignore = D203 W503 W504
 exclude =
     src/bronfood/settings.py,
     src/bronfood/asgi.py,

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
+
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -153,3 +154,9 @@ VENDORS = {
             }
         }
 }
+
+AUTHENTICATION_BACKENDS = [
+    'bronfood.auth_backends.PhoneBackend',
+    'bronfood.auth_backends.UsernameBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
