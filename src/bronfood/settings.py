@@ -14,7 +14,6 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -39,10 +38,11 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'bronfood.core.client.apps.ClientConfig',
     'bronfood.core.useraccount.apps.UseraccountConfig',
+    'bronfood.core.phone.apps.PhoneConfig',
     'bronfood.api.apps.ApiConfig',
-    'bronfood.core.restaurant_owner.apps.RestaurantOwnerConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,9 +51,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'drf_yasg',
     'rest_framework',
+    'rest_framework.authtoken', # Token
+    'djoser', # Token
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -154,3 +158,13 @@ VENDORS = {
             }
         }
 }
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication', # Token
+    ],
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json'
+}
+
+# NOTE ТОЛЬКО В РАЗРАБОТКЕ!
+CORS_ALLOW_ALL_ORIGINS = True
