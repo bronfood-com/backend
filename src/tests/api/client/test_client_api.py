@@ -215,12 +215,9 @@ class ClientApiTests(APITestCase):
         self.assertEqual(client_temp_data.fullname, data['fullname'])
         self.assertEqual(client_temp_data.phone, data['phone'])
 
-        temp_data_code = client_temp_data.temp_data_code
         expected_data = {
             'status': 'success',
-            'data': {
-                'temp_data_code': temp_data_code
-            }
+            'data': None,
         }
         self.assertEqual(response.data,
                          expected_data,

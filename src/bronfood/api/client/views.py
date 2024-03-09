@@ -166,8 +166,8 @@ class ClientChangePasswordConfirmationView(BaseAPIView):
         # Создание временных данных
         temp_data_serializer.save()
 
-        # # TODO: создание СМС с нужной причиной в объекте клинта
-        # # и отправка на телефон
+        # TODO: создание СМС с нужной причиной в объекте клинта
+        # и отправка на телефон
 
         response_data = {
             'temp_data_code': temp_data_serializer.instance.temp_data_code}
@@ -290,9 +290,9 @@ class ClientRequestProfileUpdateView(BaseAPIView):
         # Создание временных данных
         temp_data_serializer.save()
 
-        response_data = {
-            'temp_data_code': temp_data_serializer.instance.temp_data_code
-        }
+        # response_data = {
+        #     'temp_data_code': temp_data_serializer.instance.temp_data_code
+        # }
 
-        return Response(success_data(response_data),
+        return Response(success_data(None),
                         status=status.HTTP_200_OK)
