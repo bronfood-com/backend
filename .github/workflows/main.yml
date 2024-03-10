@@ -65,4 +65,8 @@ jobs:
         run: python src/manage.py test tests
 
       - name: Stop PostgreSQL with docker-compose
-        run: cd infra && docker-compose down
+        run: |
+          pwd
+          cd infra
+          pwd
+          docker-compose down
