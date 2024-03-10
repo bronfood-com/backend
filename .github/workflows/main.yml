@@ -73,8 +73,8 @@ jobs:
           script: |
             pwd
             ls
-          # mkdir -p ./infra
-          # ls
+            mkdir -p ./infra
+            ls
 
       # - name: Copy Docker Compose file to server
       #   uses: appleboy/scp-action@master
