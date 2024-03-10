@@ -20,7 +20,6 @@ jobs:
       - name: install python
         uses: actions/setup-python@v4
         with:
-        # актуальная версия питона
           python-version: '3.11'
 
       - name: install deps
@@ -63,6 +62,10 @@ jobs:
           sleep 5
           python src/manage.py makemigrations
           python src/manage.py migrate
+      
+      - name: Django tests
+        run: python src/manage.py test tests
+
 
   deploy:
     needs: test
