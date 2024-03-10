@@ -141,4 +141,4 @@ jobs:
             pwd
             ls -a
             cd infra
-            sudo docker-compose -f docker-compose.images.yml up -d
+            sudo docker-compose -f $PWD/docker-compose.images.yml up -d
