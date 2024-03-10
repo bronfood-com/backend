@@ -1,0 +1,744 @@
+swagger: '2.0'
+info:
+  title: bronfood.com API
+  description: Документация для проекта bronfood.com
+  contact:
+    email: admin@bronfood.com
+  license:
+    name: BSD License
+  version: v1
+host: 127.0.0.1:8000
+schemes:
+- http
+basePath: /
+consumes:
+- application/json
+produces:
+- application/json
+securityDefinitions:
+  Basic:
+    type: basic
+security:
+- Basic: []
+paths:
+
+  /client/request_to_signup/:
+    post:
+      operationId: client_create
+      summary: client_create
+      description: |-
+        Создание нового клиента.
+        Отправка СМС для валидации телефона клиента.
+      parameters:
+      - name: data
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/ClientCreate'
+      responses:
+        '201':
+          description: ''
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: success
+              data:
+                type: object
+                properties:
+                  temp_data_code:
+                    type: string
+                    example: rcgU3D
+        '400':
+          description: Validation Error
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: ValidationError
+                
+        '409':
+          description: Conflict error
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: phoneNumberIsAlreadyUsed 
+      tags:
+      - client
+    parameters: []  
+
+
+  /client/signup/:
+    post:
+      operationId: client_signup
+      summary: Signup
+      description: |-
+        Получения кода подтверждения.
+        Авторизация клиента.
+      parameters:
+      - name: data
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/ClientSignupData'
+      responses:
+        '201':
+          description: ''
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: success
+              data:
+                type: object
+                properties:
+                  phone: 
+                    type: string
+                  fullname:
+                    type: string
+                  auth_token:
+                    type: string
+         
+        '400':
+          description: ValidationError
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: ValidationError
+        '404':
+          description: invalidConformationCode
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: invalidConformationCode 
+  
+  
+      tags:
+      - client
+    parameters: []  
+  
+  /change_password/request/:
+    post:
+      operationId: request_change_password
+      summary: request_change_password
+      description: |-
+        Запрос на смену пароля.
+      parameters:
+      - name: data
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            phone: 
+              type: string
+      responses:
+        '200':
+          description: ''
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: success
+              data:
+                type: object
+                properties:
+                  temp_data_code:
+                    type: string
+        '400':
+          description: ValidationError
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: ValidationError
+        '404':
+          description: UserWithThatPhoneNotFound
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: UserWithThatPhoneNotFound
+      tags:
+      - client
+    parameters: []      
+  
+
+  /change_password/confirmation/:
+    post:
+      operationId: change_password_confirmation
+      summary: change_password_confirmation
+      description: |-
+        Запрос на смену пароля.
+      parameters:
+      - name: data
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            temp_data_code:
+              type: string
+            password:
+              type: string
+            password_confirm:
+              type: string
+      responses:
+        '200':
+          description: ''
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: success
+              data:
+                type: object
+                properties:
+                  temp_data_code:
+                    type: string
+
+        '400':
+          description: ValidationError
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: ValidationError
+      tags:
+      - client
+    parameters: []      
+
+  /change_password/complete/:
+    patch:
+      operationId: complete_change_password
+      summary: complete_change_password
+      description: |-
+        Завершение смены пароля.
+      parameters:
+      - name: data
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            temp_data_code:
+              type: string
+            confimation_code:
+              type: string
+      responses:
+        '200':
+          description: ''
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: success
+              data:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password updated
+
+        '400':
+          description: ValidationError
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: ValidationError
+        
+        '404':
+          description: invalidConformationCode
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: invalidConformationCode
+      tags:
+      - client
+    parameters: []      
+
+
+  /client/profile/:
+    get:
+      operationId: client_profile_list
+      summary: Profile
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: success
+              data:
+                type: object
+                properties:
+                  fullname:
+                    type: string
+                  phone:
+                    type: string
+                  role:
+                    type: string
+                    example: CLIENT
+                  auth_token:
+                    type: string
+      tags:
+      - client
+
+    patch:
+      operationId: client_profile_partial_update
+      summary: Update profile
+      description: ''
+      parameters:
+      - name: data
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            confimation_code:
+              type: string
+      responses:
+        '200':
+          description: ''
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: success
+              data:
+                type: object
+                properties:
+                  fullname:
+                    type: string
+                  phone:
+                    type: string
+                  role:
+                    type: string
+                    example: CLIENT
+                  auth_token:
+                    type: string
+
+        '404':
+          description: invalidConformationCode
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: invalidConformationCode
+                
+        '400':
+          description: NoDataToUpdate
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: NoDataToUpdate
+      tags:
+      - client
+    parameters: []
+
+  /client/profile/update_request/:
+    post:
+      operationId: request_profile_update
+      summary: request_profile_update
+      description: |-
+        Запрос на изменение профиля.
+      parameters:
+      - name: data
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            password:
+              type: string
+            password_confirm:
+              type: string
+            fullname:
+              type: string
+            phone:
+              type: string
+      responses:
+        '200':
+          description: ''
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: success
+              data:
+                type: string
+                example: "null"
+        
+        '400':
+          description: ValidationError
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: ValidationError
+
+      tags:
+      - client
+    parameters: []
+
+
+  /signin/:
+    post:
+      operationId: client_signin_create
+      description: Custom token creation view with additional data.
+      parameters:
+      - name: data
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            password:
+              type: string
+            phone:
+              type: string
+      responses:
+        '200':
+          description: ''
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: success
+              data:
+                type: object
+                properties:
+                  auth_token:
+                    type: string
+                  fullname:
+                    type: string
+                  phone:
+                    type: string
+                  role: 
+                    type: string
+                    example: CLIENT
+  
+        '400':
+          description: invalidCredentials
+          schema: 
+            type: object
+            properties:
+              status:
+                type: string
+                example: error
+              error_message:
+                type: string
+                example: invalidCredentials
+      tags:
+      - common
+    parameters: []
+
+  /client/signout/:
+    post:
+      operationId: client_signout_create
+      description: Use this endpoint to logout user (remove user authentication token).
+      parameters: []
+      responses:
+        '204':
+          description: ''
+      tags:
+      - client
+    parameters: []
+
+  
+  /healthcheck/:
+    get:
+      operationId: healthcheck_list
+      description: |-
+        отправляет get запрос на /healthcheck/,
+        возвращает статус 200 с json {"message": "ok"}
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+      - healthcheck
+    parameters: []
+
+
+definitions:
+
+  ClientSignupData:
+    type: object
+    properties:
+      temp_data_code:
+        type: string
+      confirmation_code:
+        type: string
+
+  ClientChangePassword:
+    required:
+    - phone
+    - confirmation_code
+    type: object
+    properties:
+      new_password:
+        title: New password
+        type: string
+        pattern: ^[A-Za-z!@#$%^&*()-_+=<>?]{4,20}$
+        minLength: 1
+      new_password_confirm:
+        title: New password confirm
+        type: string
+        pattern: ^[A-Za-z!@#$%^&*()-_+=<>?]{4,20}$
+        minLength: 1
+      phone:
+        title: Phone
+        type: string
+        pattern: ^7\d{9}$
+        minLength: 1
+      confirmation_code:
+        title: Confirmation code
+        type: string
+        minLength: 1
+  ClientResponse:
+    required:
+    - phone
+    - fullname
+    type: object
+    properties:
+      phone:
+        title: Phone
+        type: string
+        minLength: 1
+      fullname:
+        title: Fullname
+        type: string
+        minLength: 1
+  Confirmation:
+    required:
+    - confirmation_code
+    type: object
+    properties:
+      confirmation_code:
+        title: Confirmation code
+        type: string
+        pattern: ^\d{4}$
+        minLength: 1
+  ClientUpdate:
+    required:
+    - confirmation_code
+    type: object
+    properties:
+      new_password:
+        title: New password
+        type: string
+        pattern: ^[A-Za-z!@#$%^&*()-_+=<>?]{4,20}$
+        minLength: 1
+      new_password_confirm:
+        title: New password confirm
+        type: string
+        pattern: ^[A-Za-z!@#$%^&*()-_+=<>?]{4,20}$
+        minLength: 1
+      fullname:
+        title: Fullname
+        type: string
+        pattern: ^[А-Яа-яЁёA-Za-z\s]{2,40}$
+        minLength: 1
+      confirmation_code:
+        title: Confirmation code
+        type: string
+        minLength: 1
+  ClientRequestSmsForProfile:
+    type: object
+    properties:
+      new_password:
+        title: New password
+        type: string
+        pattern: ^[A-Za-z!@#$%^&*()-_+=<>?]{4,20}$
+        minLength: 1
+      new_password_confirm:
+        title: New password confirm
+        type: string
+        pattern: ^[A-Za-z!@#$%^&*()-_+=<>?]{4,20}$
+        minLength: 1
+      fullname:
+        title: Fullname
+        type: string
+        pattern: ^[А-Яа-яЁёA-Za-z\s]{2,40}$
+        minLength: 1
+  TokenCreate:
+    type: object
+    properties:
+      password:
+        title: Password
+        type: string
+        minLength: 1
+      phone:
+        title: Phone
+        type: string
+        minLength: 1
+  Client:
+    required:
+    - password
+    - phone
+    - fullname
+    - confirmation_code
+    type: object
+    properties:
+      password:
+        title: Password
+        type: string
+        pattern: ^[A-Za-z!@#$%^&*()-_+=<>?]{4,20}$
+        minLength: 1
+      phone:
+        title: Phone
+        type: string
+        pattern: ^7\d{9}$
+        minLength: 1
+      fullname:
+        title: Fullname
+        type: string
+        pattern: ^[А-Яа-яЁёA-Za-z\s]{2,40}$
+        minLength: 1
+      confirmation_code:
+        title: Confirmation code
+        type: string
+        minLength: 1
+  
+  ClientCreate:
+    required:
+    - phone
+    - fullname
+    - password
+    type: object
+    properties:
+      phone:
+        title: Phone
+        type: string
+        minLength: 1
+      fullname:
+        title: Fullname
+        type: string
+        minLength: 1
+      password:
+        title: Password
+        type: string
+        minLength: 1  
+  
+
+  ClientUnicCode:
+    required:
+    - temp_data_code
+    type: object
+    properties:
+      temp_data_code:
+        title: temp_data_code
+        type: string
+        minLength: 1
+
+
+  ClientLogin:
+    required:
+    - phone
+    - fullname
+    - auth_token
+    type: object
+    properties:
+      phone:
+        title: Phone
+        type: string
+        minLength: 1
+      fullname:
+        title: Fullname
+        type: string
+        minLength: 1
+      auth_token:
+        title: Auth token
+        type: string
+        minLength: 1
+  
+  
+  ClientRequestSmsForSignup:
+    required:
+    - password
+    - phone
+    - fullname
+    type: object
+    properties:
+      password:
+        title: Password
+        type: string
+        pattern: ^[A-Za-z!@#$%^&*()-_+=<>?]{4,20}$
+        minLength: 1
+      phone:
+        title: Phone
+        type: string
+        pattern: ^7\d{9}$
+        minLength: 1
+      fullname:
+        title: Fullname
+        type: string
+        pattern: ^[А-Яа-яЁёA-Za-z\s]{2,40}$
+        minLength: 1
