@@ -55,12 +55,12 @@ jobs:
       - name: Start PostgreSQL with docker-compose
         run: docker-compose -f infra/docker-compose.only_db.yml up -d
 
-      - name: Set migrations
-        run: |
-          pwd
-          ls
-          python src/manage.py makemigrations
-          python src/manage.py migrate
+    #   - name: Set migrations
+    #     run: |
+    #       pwd
+    #       ls
+    #       python src/manage.py makemigrations
+    #       python src/manage.py migrate
 
       - name: Django tests
         run: python src/manage.py test tests
