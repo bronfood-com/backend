@@ -57,8 +57,9 @@ jobs:
 
       - name: Set migrations
         run: |
+          pwd
+          ls
           python src/manage.py makemigrations
-          python src/manage.py makemigrations phone
           python src/manage.py migrate
 
       - name: Django tests
