@@ -65,7 +65,7 @@ jobs:
         run: python src/manage.py test tests
   
   # Собрать и отправить образ приложения на DockerHub
-  build_and_push_to_docker_hub:
+  build:
     runs-on: ubuntu-latest
     needs: tests
     steps:
@@ -89,7 +89,7 @@ jobs:
           tags: solodnikov/bronfood_backend:latest
 
   deploy:
-    needs: tests
+    needs: build
     runs-on: ubuntu-latest
     steps:
     
