@@ -22,7 +22,6 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from bronfood.api.views import CustomTokenCreateView
 
-from bronfood.api.views import healthcheck
 
 urlpatterns = [
     path('admin/', admin.site.urls),
