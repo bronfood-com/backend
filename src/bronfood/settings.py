@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'bronfood.core.useraccount.apps.UseraccountConfig',
     'bronfood.core.phone.apps.PhoneConfig',
     'bronfood.api.apps.ApiConfig',
+    'bronfood.core.restaurant_owner.apps.RestaurantOwnerConfig',
+    'bronfood.core.phone.apps.PhoneConfig'
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,8 +53,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'drf_yasg',
     'rest_framework',
-    'rest_framework.authtoken', # Token
-    'djoser', # Token
+    'rest_framework.authtoken',  # Token
+    'djoser',  # Token
 ]
 
 MIDDLEWARE = [
