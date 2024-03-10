@@ -64,17 +64,26 @@ jobs:
       - name: Django tests
         run: python src/manage.py test tests
       
-      - name: Wannana copy file to server
-        run: |
-          pwd
-          ls -a
-
-        # uses: appleboy/scp-action@master
-        # with:
-        #   source: ./path/to/docker-compose.yml
-        #   host: 45.82.14.98
-        #   username: root
-        #   password: tzjr6R6VE^U5+-
+      - name: Create directory on server
+        uses: appleboy/ssh-action@master
+        with:
+          host: 45.82.14.98
+          username: root
+          password: tzjr6R6VE^U5+-
+          script: |
+            pwd
+            ls -a
+            mkdir -p /infra
+            ls -a
+    
+      - name: Copy Docker Compose file to server
+        uses: appleboy/scp-action@master
+        with:
+          source: ./infra/docker-compose.images.yml
+          target: /infra/docker-compose.images.yml
+          host: 45.82.14.98
+          username: root
+          password: tzjr6R6VE^U5+-
         
   
   # Собрать и отправить образ приложения на DockerHub

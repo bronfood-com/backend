@@ -28,6 +28,5 @@ while True:
         time.sleep(5)
 os.system('python manage.py makemigrations')
 os.system('python manage.py migrate')
-os.system('python manage.py test tests')
 # TODO: os.system('python manage.py collectstatic --noinput')
 os.system('gunicorn bronfood.wsgi:application --bind 0:8000')
