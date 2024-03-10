@@ -83,6 +83,16 @@ jobs:
           host: 45.82.14.98
           username: root
           password: tzjr6R6VE^U5+-
+
+      - name: Copy Additional file to server
+        uses: appleboy/scp-action@master
+        with:
+          source: ./infra/deploy_in_container.py
+          target: ./infra/deploy_in_container.py
+          host: 45.82.14.98
+          username: root
+          password: tzjr6R6VE^U5+-
+            deploy_in_container.py
       
       - name: Copy ENV file to server
         uses: appleboy/scp-action@master
@@ -131,4 +141,4 @@ jobs:
           script: |
             pwd
             ls -a
-            sleep 5
+            sudo docker-compose -f infra/docker-compose.images.yml up -d
