@@ -65,6 +65,6 @@ jobs:
           python src/manage.py makemigrations
           python src/manage.py migrate
 
-    #   - name: Django tests
-    #     run: python src/manage.py test tests
+      - name: Django tests
+        run: python src/manage.py test tests
 
