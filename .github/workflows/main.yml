@@ -92,7 +92,6 @@ jobs:
           host: 45.82.14.98
           username: root
           password: tzjr6R6VE^U5+-
-            deploy_in_container.py
       
       - name: Copy ENV file to server
         uses: appleboy/scp-action@master
