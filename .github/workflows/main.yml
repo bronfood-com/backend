@@ -52,6 +52,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
+      - name: Stop and remove existing PostgreSQL containers
+        run: |
+          existing_containers=$(docker ps -a --filter name=postgres -q)
+          if [ ! -z "$existing_containers" ]; then
+            docker stop $existing_containers
+            docker rm $existing_containers
+          fi
+
       - name: Start PostgreSQL with docker-compose
         run: docker-compose -f infra/docker-compose.only_db.yml up -d
 
