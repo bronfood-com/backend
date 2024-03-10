@@ -61,5 +61,8 @@ jobs:
           python src/manage.py makemigrations phone
           python src/manage.py migrate
 
+      - name: Django tests
+        run: python src/manage.py test tests
+
       - name: Stop PostgreSQL with docker-compose
-        run: docker-compose down
+        run: cd infra && docker-compose down
