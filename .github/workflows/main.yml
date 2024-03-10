@@ -79,7 +79,7 @@ jobs:
         uses: appleboy/scp-action@master
         with:
           source: ./infra/docker-compose.images.yml
-          target: /infra/docker-compose.images.yml
+          target: ./infra/docker-compose.images.yml
           host: 45.82.14.98
           username: root
           password: tzjr6R6VE^U5+-
