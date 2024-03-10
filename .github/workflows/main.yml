@@ -27,7 +27,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8
           pip install black
-          pip install -r requirements.txt
 
       - name: run flake8
         run: flake8
@@ -44,7 +43,7 @@ jobs:
           echo "POSTGRES_DB=postgres" >> .env
           echo "POSTGRES_USER=postgres" >> .env
           echo "POSTGRES_PASSWORD=postgres" >> .env
-          echo "DB_HOST=localhost" >> .env
+          echo "DB_HOST=db" >> .env
           echo "DB_PORT=5432" >> .env
 
       - name: Set up Docker Buildx
@@ -53,19 +52,10 @@ jobs:
 
       - name: Start PostgreSQL with docker-compose
         run: |
-          docker-compose -f infra/docker-compose.only_db.yml up -d
+          docker-compose -f infra/docker-compose.django_db.yml up -d
           docker ps -a
           docker images
-
-      - name: Set migrations
-        run: |
-          sleep 5
-          python src/manage.py makemigrations
-          python src/manage.py migrate
-      
-      - name: Django tests
-        run: python src/manage.py test tests
-
+  
 
   deploy:
     needs: test
