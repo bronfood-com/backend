@@ -140,4 +140,5 @@ jobs:
           script: |
             pwd
             ls -a
-            sudo docker-compose -f .infra/docker-compose.images.yml up -d
+            cd infra
+            sudo docker-compose -f docker-compose.images.yml up -d
