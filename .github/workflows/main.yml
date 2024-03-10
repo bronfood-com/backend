@@ -67,6 +67,8 @@ jobs:
       - name: Stop PostgreSQL with docker-compose
         run: |
           pwd
+          ls
           cd infra
           pwd
+          ls
           docker-compose down
