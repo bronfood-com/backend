@@ -49,17 +49,15 @@ jobs:
           echo "DB_HOST=localhost" >> .env
           echo "DB_PORT=5432" >> .env
 
-      - name: Docker Check
-        run: |
-          docker ps -a
-          docker images
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
 
       - name: Start PostgreSQL with docker-compose
-        run: docker-compose -f infra/docker-compose.only_db.yml up -d
+        run: |
+          docker-compose -f infra/docker-compose.only_db.yml up -d
+          docker ps -a
+          docker images
 
     #   - name: Set migrations
     #     run: |
