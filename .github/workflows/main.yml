@@ -71,16 +71,15 @@ jobs:
           username: root
           password: tzjr6R6VE^U5+-
           script: |
-            pwd
-            ls -a
+            cd root
             mkdir -p /infra
-            ls -a
-    
+            ls
+
       - name: Copy Docker Compose file to server
         uses: appleboy/scp-action@master
         with:
           source: ./infra/docker-compose.images.yml
-          target: /infra/docker-compose.images.yml
+          target: root/infra/docker-compose.images.yml
           host: 45.82.14.98
           username: root
           password: tzjr6R6VE^U5+-
