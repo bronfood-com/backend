@@ -46,7 +46,7 @@ jobs:
           echo "POSTGRES_DB=postgres" >> .env
           echo "POSTGRES_USER=postgres" >> .env
           echo "POSTGRES_PASSWORD=postgres" >> .env
-          echo "DB_HOST=db" >> .env
+          echo "DB_HOST=localhost" >> .env
           echo "DB_PORT=5432" >> .env
 
       - name: Docker Check
@@ -54,20 +54,12 @@ jobs:
           docker ps -a
           docker images
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
-    #   - name: Set up Docker Buildx
-    #     uses: docker/setup-buildx-action@v1
 
-    #   - name: Stop and remove existing PostgreSQL containers
-    #     run: |
-    #       existing_containers=$(docker ps -a --filter name=postgres -q)
-    #       if [ ! -z "$existing_containers" ]; then
-    #         docker stop $existing_containers
-    #         docker rm $existing_containers
-    #       fi
-
-    #   - name: Start PostgreSQL with docker-compose
-    #     run: docker-compose -f infra/docker-compose.django_db.yml up -d
+      - name: Start PostgreSQL with docker-compose
+        run: docker-compose -f infra/docker-compose.only_db.yml up -d
 
     #   - name: Set migrations
     #     run: |
