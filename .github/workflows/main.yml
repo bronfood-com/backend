@@ -11,7 +11,7 @@ on:
 
 jobs:
 
-  check:
+  test:
   # актуальная версия убунту сервера
     runs-on: ubuntu-latest
     steps:
@@ -29,9 +29,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8
           pip install black
+          pip install -r requirements.txt
 
       - name: run flake8
         run: flake8
 
       - name: run black
         run: black --diff -S .
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Start PostgreSQL with docker-compose
+        run: docker-compose -f infra/docker-compose.only_db.yml up -d
+
+      - name: Set migrations
+        run: |
+          python src/manage.py makemigrations
+          python src/manage.py makemigrations phone
+          python src/manage.py migrate
+
+      - name: Stop PostgreSQL with docker-compose
+        run: docker-compose down
