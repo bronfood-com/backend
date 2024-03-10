@@ -72,18 +72,17 @@ jobs:
           password: tzjr6R6VE^U5+-
           script: |
             pwd
-            ls
             mkdir -p ./infra
             ls
 
-      # - name: Copy Docker Compose file to server
-      #   uses: appleboy/scp-action@master
-      #   with:
-      #     source: ./infra/docker-compose.images.yml
-      #     target: /infra/docker-compose.images.yml
-      #     host: 45.82.14.98
-      #     username: root
-      #     password: tzjr6R6VE^U5+-
+      - name: Copy Docker Compose file to server
+        uses: appleboy/scp-action@master
+        with:
+          source: /infra/docker-compose.images.yml
+          target: /infra/docker-compose.images.yml
+          host: 45.82.14.98
+          username: root
+          password: tzjr6R6VE^U5+-
         
   
   # Собрать и отправить образ приложения на DockerHub
