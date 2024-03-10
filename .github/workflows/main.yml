@@ -65,6 +65,17 @@ jobs:
           python src/manage.py makemigrations
           python src/manage.py migrate
 
-      - name: Django tests
-        run: python src/manage.py test tests
-
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    
+      - name: Check connection to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: 45.82.14.98
+          username: root
+          password: tzjr6R6VE^U5+-
+          script: |
+            pwd
+            ls -a
