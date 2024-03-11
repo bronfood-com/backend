@@ -75,32 +75,32 @@ jobs:
             mkdir -p ./infra
             ls
 
-      - name: Copy Docker Compose file to server
-        uses: appleboy/scp-action@master
-        with:
-          source: ./infra/docker-compose.images.yml
-          target: ./infra/docker-compose.images.yml
-          host: 45.82.14.98
-          username: root
-          password: tzjr6R6VE^U5+-
+      # - name: Copy Docker Compose file to server
+      #   uses: appleboy/scp-action@master
+      #   with:
+      #     source: ./infra/docker-compose.images.yml
+      #     target: ./infra/docker-compose.images.yml
+      #     host: 45.82.14.98
+      #     username: root
+      #     password: tzjr6R6VE^U5+-
 
-      - name: Copy Additional file to server
-        uses: appleboy/scp-action@master
-        with:
-          source: ./infra/deploy_in_container.py
-          target: ./infra/deploy_in_container.py
-          host: 45.82.14.98
-          username: root
-          password: tzjr6R6VE^U5+-
+      # - name: Copy Additional file to server
+      #   uses: appleboy/scp-action@master
+      #   with:
+      #     source: ./infra/deploy_in_container.py
+      #     target: ./infra/deploy_in_container.py
+      #     host: 45.82.14.98
+      #     username: root
+      #     password: tzjr6R6VE^U5+-
       
-      - name: Copy ENV file to server
-        uses: appleboy/scp-action@master
-        with:
-          source: ./.env
-          target: ./.env
-          host: 45.82.14.98
-          username: root
-          password: tzjr6R6VE^U5+-   
+      # - name: Copy ENV file to server
+      #   uses: appleboy/scp-action@master
+      #   with:
+      #     source: ./.env
+      #     target: ./.env
+      #     host: 45.82.14.98
+      #     username: root
+      #     password: tzjr6R6VE^U5+-   
   
   # Собрать и отправить образ приложения на DockerHub
   build:
