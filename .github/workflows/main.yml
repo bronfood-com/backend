@@ -1,18 +1,24 @@
 name: CI
 
 on:
+
   push:
     branches:
-      [ develop_backup, feature/deploy ]
+      - develop_backup
+      - feature/deploy
 
   pull_request:
+    types: [closed]
     branches:
-      [ develop_backup, feature/deploy ]
+      - develop_backup
+      - feature/deploy
 
 jobs:
 
   tests:
+    
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'develop_backup')
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -64,19 +70,9 @@ jobs:
       - name: Django tests
         run: python src/manage.py test tests
       
-      - name: Create directory on server
-        uses: appleboy/ssh-action@master
-        with:
-          host: 45.82.14.98
-          username: root
-          password: tzjr6R6VE^U5+-
-          script: |
-            pwd
-            mkdir -p ./infra
-            ls
- 
   # Собрать и отправить образ приложения на DockerHub
   build:
+
     runs-on: ubuntu-latest
     needs: tests
     steps:
@@ -100,6 +96,7 @@ jobs:
           tags: solodnikov/bronfood_backend:latest
 
   deploy:
+
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -111,7 +108,5 @@ jobs:
           username: root
           password: tzjr6R6VE^U5+-
           script: |
-            pwd
-            ls -a
             cd infra
             sudo docker-compose -f $PWD/docker-compose.images.yml up -d --build
