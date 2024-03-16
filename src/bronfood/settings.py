@@ -14,7 +14,6 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -39,11 +38,13 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'bronfood.core.client.apps.ClientConfig',
     'bronfood.core.useraccount.apps.UseraccountConfig',
     'bronfood.api.apps.ApiConfig',
     'bronfood.core.restaurants',
     'bronfood.core.phone.apps.PhoneConfig',
+    'bronfood.api.apps.ApiConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -52,9 +53,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'drf_yasg',
     'rest_framework',
+    'rest_framework.authtoken', # Token
+    'djoser', # Token
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -98,6 +103,7 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT')
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -144,7 +150,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'useraccount.UserAccount'
 
 
-SMS_SETTINGS = {
-    'BACKEND': 'bronfood.core.phone.sms.backends.dummy.SmsBackend' if ENV_NAME == 'local'
-    else os.getenv('BACKEND')
+VENDORS = {
+    'SMS_BACKENDS': {
+        'KAZINFOTECH': {
+                'USERNAME': os.getenv('KAZINFOTECH_USERNAME'),
+                'PASSWORD': os.getenv('KAZINFOTECH_PASSWORD'),
+                'URL': 'https://kazinfoteh.org:9507/api?',
+                'ORIGINATOR': 'INFO_KAZ'
+            }
+        }
 }
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication', # Token
+    ],
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json'
+}
+
+# NOTE ТОЛЬКО В РАЗРАБОТКЕ!
+CORS_ALLOW_ALL_ORIGINS = True

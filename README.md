@@ -20,10 +20,21 @@
 git clone https://github.com/bronfood-com/backend
 ```
 
-### Запуск проекта в контейнере:
+### Запуск приложения вне контейнера:
 
 ```
-docker-compose -f docker-compose.yml up -d
+docker-compose -f infra/docker-compose.only_db.yml up -d
+python src/manage.py runserver
+```
+
+### Запуск приложения и базы данных в контейнерах:
+
+> [!WARNING]
+> Для запуска необходимо изменить `.env`:
+> В поле `DB_HOST` нужно установить значение `db`
+
+```
+docker-compose -f infra/docker-compose.django_db.yml up -d
 ```
 
 ### Запуск unit-testов:
