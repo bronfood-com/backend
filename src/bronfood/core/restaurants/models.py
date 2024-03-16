@@ -75,8 +75,8 @@ class Restaurant(models.Model):
         verbose_name='Меню',
         on_delete=models.CASCADE
     )
-    owner = models.ForeignKey('RestaurantOwner')
-    admin = models.ForeignKey('RestaurantAdmin')
+    owner = models.ForeignKey('RestaurantOwner', on_delete=models.SET_NULL)
+    admin = models.ForeignKey('RestaurantAdmin', on_delete=models.SET_NULL)
     type_of_shop = models.CharField(
         max_length=2,
         choices=TypeOfShop.choices,
