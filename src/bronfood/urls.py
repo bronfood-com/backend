@@ -25,7 +25,7 @@ from bronfood.api.views import CustomTokenCreateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('healthcheck/', healthcheck),
+    path('healthcheck/', healthcheck),  # noqa
     path('client/', include('bronfood.api.client.urls', namespace='client')),
     path('signin/', CustomTokenCreateView.as_view(), name="signin"),
 ]
