@@ -16,7 +16,6 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, re_path, include
-from bronfood.api.views import healthcheck
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -27,6 +26,7 @@ from bronfood.api.views import healthcheck
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('healthcheck/', healthcheck),
+    path('api/', include('bronfood.api.urls')),
     path('client/', include('bronfood.api.client.urls', namespace='client')),
     path('signin/', CustomTokenCreateView.as_view(), name="signin"),
 ]

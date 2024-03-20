@@ -12,8 +12,10 @@ from bronfood.api.client.serializers import ClientLoginSerializer
 
 @api_view(['GET'])
 def healthcheck(request):
-    """отправляет get запрос на /healthcheck/,
-    возвращает статус 200 с json {"message": "ok"}"""
+    """
+    отправляет get запрос на /healthcheck/
+    возвращает статус 200 с json {"message": "ok"}
+    """
     return Response({'message': 'ok'}, status=status.HTTP_200_OK)
 
 

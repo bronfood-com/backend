@@ -45,5 +45,6 @@ sqlparse==0.4.4
 tomli==2.0.1
 typing_extensions==4.8.0
 tzdata==2023.3
+Pillow==10.1.0
 uritemplate==4.1.1
 urllib3==2.1.0
