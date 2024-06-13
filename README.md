@@ -23,7 +23,7 @@ git clone https://github.com/bronfood-com/backend
 ### Запуск приложения вне контейнера:
 
 ```
-docker-compose -f infra/docker-compose.only_db.yml up -d
+docker compose -f infra/docker-compose.only_db.yml up -d
 python src/manage.py runserver
 ```
 
@@ -34,7 +34,7 @@ python src/manage.py runserver
 > В поле `DB_HOST` нужно установить значение `db`
 
 ```
-docker-compose -f infra/docker-compose.django_db.yml up -d
+docker compose -f infra/docker-compose.django_db.yml up -d
 ```
 
 ### Запуск unit-testов:
