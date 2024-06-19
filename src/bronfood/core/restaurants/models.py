@@ -243,24 +243,6 @@ class Favorites(models.Model):
         return f"{self.user} - {self.restaurant}"
 
 
-class MealInBasket(models.Model):
-    '''Блюдо в корзине.'''
-    meal = models.ForeignKey(
-        Meal,
-        on_delete=models.CASCADE
-    )
-    count = models.PositiveIntegerField(
-        'Количество блюд'
-    )
-
-    class Meta:
-        verbose_name = 'Блюдо в корзине'
-        verbose_name_plural = 'Блюда в корзине'
-
-    def __str__(self):
-        return f"{self.meal} - {self.count}"
-
-
 class Basket(models.Model):
     '''Корзина.'''
     restaurant = models.ForeignKey(
@@ -271,7 +253,8 @@ class Basket(models.Model):
         verbose_name='Ресторан'
     )
     meals = models.ManyToManyField(
-        MealInBasket,
+        Meal,
+        through='MealInBasket',
         related_name='baskets',
         verbose_name='Блюда в корзине'
     )
@@ -291,6 +274,31 @@ class Basket(models.Model):
 
     def __str__(self):
         return f"Корзина {self.id} ресторана {self.restaurant}"
+
+
+class MealInBasket(models.Model):
+    '''Блюдо в корзине.'''
+    basket = models.ForeignKey(
+        Basket,
+        on_delete=models.CASCADE,
+        related_name='mealinbasket',
+        verbose_name='Корзина'
+    )
+    meal = models.ForeignKey(
+        Meal,
+        on_delete=models.CASCADE
+    )
+    count = models.PositiveIntegerField(
+        'Количество блюд',
+        default=1
+    )
+
+    class Meta:
+        verbose_name = 'Блюдо в корзине'
+        verbose_name_plural = 'Блюда в корзине'
+
+    def __str__(self):
+        return f"{self.meal} - {self.count}"
 
 
 class OrderedMeal(models.Model):
