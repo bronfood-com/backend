@@ -282,7 +282,8 @@ class MealInBasket(models.Model):
         Basket,
         on_delete=models.CASCADE,
         related_name='mealinbasket',
-        verbose_name='Корзина'
+        verbose_name='Корзина',
+        default=0
     )
     meal = models.ForeignKey(
         Meal,
