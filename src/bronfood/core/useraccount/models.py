@@ -114,8 +114,9 @@ class UserAccountTempData(models.Model):
         max_length=TEMP_DATA_CODE_LENGTH,
     )
     password = models.CharField(
-        max_length=128,
-        null=True)
+        max_length=256,
+        null=True
+    )
     user = models.OneToOneField(
         UserAccount,
         on_delete=models.CASCADE,

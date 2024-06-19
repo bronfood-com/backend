@@ -24,7 +24,7 @@ class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
         write_only=True,
         validators=[
             validators.MinLengthValidator(4),
-            validators.MaxLengthValidator(20),
+            validators.MaxLengthValidator(256),
             validate_password,
         ]
     )
@@ -47,14 +47,6 @@ class ClientRequestRegistrationSerializer(serializers.ModelSerializer):
             user.save(update_fields=['password'])
         return user
 
-    # TODO уточнить у фронтов следует ли отдельный ответ на это давать?
-    # def validate(self, data):
-    #     if Client.objects.filter(phone=data.get('phone')).exists():
-    #         raise serializers.ValidationError(
-    #             'phoneNumberIsAlreadyUsed'
-    #         )
-    #     return data
-
 
 class TempDataSerializer(serializers.ModelSerializer):
     """
@@ -64,7 +56,7 @@ class TempDataSerializer(serializers.ModelSerializer):
         required=False,
         validators=[
             validators.MinLengthValidator(4),
-            validators.MaxLengthValidator(20),
+            validators.MaxLengthValidator(256),
             validate_password,
         ]
     )
@@ -106,10 +98,7 @@ class TempDataSerializer(serializers.ModelSerializer):
             if password != password_confirm:
                 raise serializers.ValidationError(
                     'Рasswords do not match')
-        if Client.objects.filter(phone=data.get('phone')).exists():
-            raise serializers.ValidationError(
-                'phoneNumberIsAlreadyUsed'
-            )
+
         if password_confirm:
             password_confirm = data.pop('password_confirm')
         return data
@@ -125,7 +114,7 @@ class ClientLoginSerializer(serializers.Serializer):
     password = serializers.CharField(
         validators=[
             validators.MinLengthValidator(4),
-            validators.MaxLengthValidator(20),
+            validators.MaxLengthValidator(256),
             validate_password,
         ],
         write_only=True,
@@ -169,7 +158,7 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         validators=[
             validators.MinLengthValidator(4),
-            validators.MaxLengthValidator(20),
+            validators.MaxLengthValidator(256),
             validate_password,
         ],
         write_only=True,
@@ -177,7 +166,7 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(
         validators=[
             validators.MinLengthValidator(4),
-            validators.MaxLengthValidator(20),
+            validators.MaxLengthValidator(256),
             validate_password,
         ],
         write_only=True,

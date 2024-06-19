@@ -38,7 +38,7 @@ class SmsMessage(models.TextChoices):
 class PhoneSmsOtpVerification(models.Model):
     """Describing the one-time password model."""
     message = models.CharField(
-        verbose_name='Sms message', choices=SmsMessage.choices,
+        verbose_name='Sms message', choices=SmsMessage.choices, max_length=255
     )
     code = models.CharField(
         verbose_name='One-time password', max_length=4
@@ -64,9 +64,19 @@ class PhoneSmsOtpVerification(models.Model):
         verbose_name='Expired at',
         default=in_one_hour
     )
+    attempt_counter = models.IntegerField(
+        verbose_name='Attempt counter',
+        default=0
+    )
 
     class Meta:
         ordering = ('-created_at',)
 
     def __str__(self):
         return self.message + self.code
+
+    def increment_attempt_counter(self):
+        self.attempt_counter += 1
+        if self.attempt_counter >= 3:
+            self.sms_status = SmsStatus.DECLINED
+        self.save()

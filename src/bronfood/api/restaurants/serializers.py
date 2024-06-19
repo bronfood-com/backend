@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from bronfood.core.restaurants.models import (
     Meal, Menu, Restaurant, Tag, Order, OrderedMeal,
-    Coordinates, Choice, Feature, Favorite, MealInBasket, Basket
+    Coordinates, Choice, Feature, Favorites, MealInBasket, Basket
 )
 
 
@@ -15,7 +15,7 @@ class TagSerializer(serializers.ModelSerializer):
 class FeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feature
-        fields = ['id', 'name', 'choices']
+        fields = '__all__'
 
 
 class MealSerializer(serializers.ModelSerializer):
@@ -23,7 +23,7 @@ class MealSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Meal
-        fields = ['photo', 'name', 'price', 'features']
+        fields = '__all__'
 
 
 class MenuSerializer(serializers.ModelSerializer):
@@ -39,12 +39,6 @@ class MenuSerializer(serializers.ModelSerializer):
 
         if last_meal:
             return last_meal.pic
-
-
-class RestaurantSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Restaurant
-        fields = ['id', 'photo', 'name', 'rating', 'address', 'workingTime']
 
 
 class OrderedMealSerializer(serializers.ModelSerializer):
@@ -85,6 +79,22 @@ class OrderSerializer(serializers.ModelSerializer):
 class CoordinatesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Coordinates
+        fields = ['latitude', 'longitude']
+
+
+class RestaurantListSerializer(serializers.ModelSerializer):
+    coordinates = CoordinatesSerializer(read_only=True)
+
+    class Meta:
+        model = Restaurant
+        exclude = ['meals']
+
+
+class RestaurantDetailSerializer(serializers.ModelSerializer):
+    coordinates = CoordinatesSerializer(read_only=True)
+
+    class Meta:
+        model = Restaurant
         fields = '__all__'
 
 
@@ -94,9 +104,9 @@ class ChoiceSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class FavoriteSerializer(serializers.ModelSerializer):
+class FavoritesSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Favorite
+        model = Favorites
         fields = '__all__'
 
 

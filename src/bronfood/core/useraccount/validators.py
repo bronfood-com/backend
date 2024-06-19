@@ -32,6 +32,11 @@ class ConfirmationValidator(validators.RegexValidator):
 
 
 def validate_password(value):
+    if len(value) > 256:
+        raise ValidationError(
+            'Password error. The password cannot be longer than 256 characters.'
+        )
+
     regex = '^[\w@!]+\Z'  # noqa
     if re.search(regex, value) is None:
         unmatch_symbols = ' '.join(set(

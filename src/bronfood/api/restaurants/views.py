@@ -1,8 +1,9 @@
-from rest_framework import viewsets
+from django.http import Http404
+from django.utils import timezone
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
-from django.http import Http404
 
 from bronfood.core.restaurants.models import (
     Meal,
@@ -14,7 +15,7 @@ from bronfood.core.restaurants.models import (
     Coordinates,
     Choice,
     Feature,
-    Favorite,
+    Favorites,
     MealInBasket,
     Basket
 )
@@ -22,13 +23,14 @@ from bronfood.core.restaurants.models import (
 from .serializers import (
     MealSerializer,
     MenuSerializer,
-    RestaurantSerializer,
+    RestaurantListSerializer,
+    RestaurantDetailSerializer,
     TagSerializer,
     OrderSerializer,
     OrderedMealSerializer,
     CoordinatesSerializer,
     ChoiceSerializer,
-    FavoriteSerializer,
+    FavoritesSerializer,
     MealInBasketSerializer,
     BasketSerializer,
     FeatureSerializer
@@ -50,9 +52,9 @@ class FeatureViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = FeatureSerializer
 
 
-class FavoriteViewSet(viewsets.ModelViewSet):
-    queryset = Favorite.objects.all()
-    serializer_class = FavoriteSerializer
+class FavoritesViewSet(viewsets.ModelViewSet):
+    queryset = Favorites.objects.all()
+    serializer_class = FavoritesSerializer
 
 
 class MealInBasketViewSet(viewsets.ModelViewSet):
@@ -67,7 +69,12 @@ class BasketViewSet(viewsets.ModelViewSet):
 
 class RestaurantViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Restaurant.objects.all()
-    serializer_class = RestaurantSerializer
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return RestaurantListSerializer
+        else:
+            return RestaurantDetailSerializer
 
 
 class MenuViewSet(viewsets.ReadOnlyModelViewSet):
@@ -113,6 +120,26 @@ class OrderViewSet(viewsets.ModelViewSet):
         self.perform_update(serializer)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['post'])
+    def confirm_order(self, request, pk=None):
+        order = self.get_object()
+        order.admin_confirmed = True
+        order.save()
+        return Response({'status': 'Заказ подтвержден'})
+
+    @action(detail=True, methods=['get'])
+    def check_order_status(self, request, pk=None):
+        order = self.get_object()
+        now = timezone.now()
+        if order.admin_confirmed:
+            return Response({'status': 'Заказ подтвержден'})
+        elif order.preparation_end_time and now > order.preparation_end_time:
+            elapsed_time = now - order.preparation_end_time
+            return Response({'status': f'Время подготовки истекло {elapsed_time.seconds} секунд назад'})
+        else:
+            remaining_time = order.preparation_end_time - now
+            return Response({'status': f'Осталось {remaining_time.seconds} секунд до окончания времени подготовки'})
+
 
 class RestaurantMeals(APIView):
     def get_object(self, pk):
@@ -141,3 +168,23 @@ class RestaurantMealDetail(APIView):
         meal = self.get_object(restaurant_id, meal_id)
         serializer = MealSerializer(meal)
         return Response(serializer.data)
+
+
+class UserFavoritesView(APIView):
+    def get(self, request, user_id):
+        favorites = Favorites.objects.filter(user_id=user_id)
+        favorite_restaurants = Restaurant.objects.filter(
+            id__in=[favorite.restaurant_id for favorite in favorites]
+        )
+        serializer = RestaurantDetailSerializer(favorite_restaurants, many=True)
+        return Response({"status": "success", "data": serializer.data})
+
+
+class DeleteUserFavoriteView(APIView):
+    def delete(self, request, user_id, restaurant_id):
+        favorite = Favorites.objects.filter(user_id=user_id, restaurant_id=restaurant_id)
+        if favorite.exists():
+            favorite.delete()
+            return Response({"status": "success"})
+        else:
+            return Response({"status": "error", "error_message": "Избранное не найдено"})

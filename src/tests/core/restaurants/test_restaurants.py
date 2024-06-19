@@ -1,7 +1,8 @@
 from django.test import TestCase
 
+from bronfood.core.client.models import Client
 from bronfood.core.restaurants.models import (
-    Coordinates, Meal, Menu, Restaurant, Tag, Feature
+    Coordinates, Meal, Menu, Restaurant, Tag, Feature, Favorites
 )
 
 
@@ -123,3 +124,36 @@ class MealModelTest(TestCase):
         self.assertQuerysetEqual(
             meal.features.all(), [self.feature], transform=lambda x: x
         )
+
+
+class FavoritesModelTest(TestCase):
+    '''Тест модели Favorites'''
+    def setUp(self):
+        self.coordinates = Coordinates.objects.create(
+            latitude=11.1111,
+            longitude=22.2222
+        )
+        self.restaurant = Restaurant.objects.create(
+            id=1,
+            name='Turckish',
+            photo='test',
+            address='Palace',
+            coordinates=self.coordinates,
+            rating=9.9,
+            workingTime='10:00-22:00',
+            type='cafe'
+        )
+        self.user = Client.objects.create(
+            username='testuser',
+            password='12345',
+            phone='1234567890'
+        )
+        self.favorite = Favorites.objects.create(
+            user=self.user, restaurant=self.restaurant
+        )
+
+    def test_fields(self):
+        favorite = self.favorite
+        self.assertEqual(favorite.user, self.user)
+        self.assertEqual(favorite.restaurant, self.restaurant)
+        self.assertEqual(str(favorite), f"{self.user} - {self.restaurant}")

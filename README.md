@@ -11,8 +11,23 @@
 - [Витас Вакаускас](https://github.com/Qerced)
 - [Евгений Андронов](https://github.com/syberflea)
 - [Дмитрий Луконин](https://t.me/folite999)
+- [Павел Охрим](https://github.com/d1g-1t)
 
 ## Проект можно посмотреть по адресу:
+
+```
+https://bronfood.sytes.net
+```
+
+## Админ панель проекта доступна по адресу:
+```
+https://bronfood.sytes.net/admin
+```
+##### Аккаунт администратора
+```
+телефон: 0123456789
+пароль: admin
+```
 ...
 ## Подготовка и запуск проекта
 ### Склонировать репозиторий на локальную машину:
@@ -36,6 +51,15 @@ python src/manage.py runserver
 ```
 docker compose -f infra/docker-compose.django_db.yml up -d
 ```
+
+### Запуск приложения и базы данных с сервером nginx в контейнерах:
+
+```
+docker-compose -f infra/docker-compose.yml up -d --build
+```
+При запуске на локальной машине обрабатываются только запросы http.
+
+При запуске на сервере доступны запросы на http/https.
 
 ### Запуск unit-testов:
 

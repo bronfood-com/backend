@@ -1,6 +1,8 @@
+import logging
 from django.core.management.base import BaseCommand
 from rest_framework.exceptions import ValidationError
-from ._utils import COUNT_MOCK_DATA, NAMES, random_name, random_phone_number
+from ._utils import random_string, random_phone_number, count_validate
+from ._variables import COUNT_MOCK_DATA, NAMES
 from bronfood.core.client.models import Client
 
 
@@ -9,24 +11,22 @@ def create_clients(count=COUNT_MOCK_DATA, role=Client.Role.CLIENT):
 
     if role not in Client.Role.values:
         raise ValidationError('Такой роли не существует.')
-    if count < 1 or count > 100:
-        raise ValidationError(
-            'Можно создать от 1 до 100 клиентов за один раз.'
-        )
+    count_validate(count)
 
-    objs = [
+    clients = [
         Client(
             role=role,
-            username=random_name(NAMES),
+            username=random_string(NAMES),
             password='password',
             phone=random_phone_number(),
-            fullname='{} {}'.format(random_name(NAMES), random_phone_number()),
+            fullname='{} {}'.format(random_string(NAMES), random_phone_number()),
             status=Client.Status.CONFIRMED
         )
         for i in range(count)
     ]
-    Client.objects.bulk_create(objs)
-    print(f'Создано {str(count)} клиентов с ролью {role}')
+    clients_in_bd = Client.objects.bulk_create(clients)
+    logging.info(f'Создано {str(count)} клиентов с ролью {role}')
+    return clients_in_bd
 
 
 class Command(BaseCommand):
@@ -36,7 +36,7 @@ class Command(BaseCommand):
         try:
             create_clients(options.get('count'), options.get('role'))
         except Exception as e:
-            return str(e)
+            return logging.error(e)
 
     def add_arguments(self, parser):
         parser.add_argument(

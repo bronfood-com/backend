@@ -6,17 +6,10 @@ on:
     branches:
       - develop_next
 
-  pull_request:
-    types: [closed]
-    branches:
-      - develop_next
-
 jobs:
 
   tests:
-    
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'develop_next')
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -42,7 +35,7 @@ jobs:
       - name: create .env file
         run: |
           echo "SECRET_KEY=django-insecure-ug67bb!lyca-aewcz)!lmhq54_yfsvb81%8)ni4y*0$9*0b&ti" >> .env
-          echo "DEBUG=true" >> .env
+          echo "DEBUG=False" >> .env
           echo "ENV_NAME=local" >> .env
           echo "DB_ENGINE=django.db.backends.postgresql" >> .env
           echo "POSTGRES_DB=postgres" >> .env
@@ -68,8 +61,7 @@ jobs:
       - name: Django tests
         run: python src/manage.py test tests
       
-  # Собрать и отправить образ приложения на DockerHub
-  build:
+  build_web:
 
     runs-on: ubuntu-latest
     needs: tests
@@ -93,9 +85,10 @@ jobs:
           push: true
           tags: solodnikov/bronfood_backend:latest
 
-  deploy:
+  clean_server:
 
-    needs: build
+    needs: 
+      - build_web
     runs-on: ubuntu-latest
     steps:
     
@@ -107,4 +100,41 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           script: |
             cd infra
-            sudo docker-compose -f $PWD/docker-compose.images.yml up -d --build
+            sudo docker-compose -f $PWD/docker-compose.yml down -v --rmi all
+
+  pull_web_image:
+
+    runs-on: ubuntu-latest
+    needs: clean_server
+    steps:
+      - name: Check out the repo
+        # Проверка доступности репозитория Docker Hub для workflow
+        uses: actions/checkout@v2 
+      - name: Set up Docker Buildx
+        # Вызов сборщика контейнеров docker
+        uses: docker/setup-buildx-action@v1 
+      - name: Login to Docker 
+        # Запуск скрипта авторизации на Docker Hub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Pull solodnikov/bronfood_backend:latest
+        # получаем контейнер приложения с Docker Hub
+        run: docker pull solodnikov/bronfood_backend:latest
+          
+  deploy:
+
+    needs: 
+      - pull_web_image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check connection to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: 45.82.14.98
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          script: |
+            cd infra
+            sudo docker-compose -f $PWD/docker-compose.yml up -d --build

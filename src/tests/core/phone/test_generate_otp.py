@@ -66,3 +66,16 @@ class GenerateOTPTest(TestCase):
             msg='Ожидается исключение при аргументах с неверным типом данных.'
         ):
             validate_otp_verification(None, None)
+
+    def test_increment_attempt_counter(self):
+        otp = create_otp_verification(
+            GenerateOTPTest.user, IssueReason.REGISTRATION,
+            SmsMessage.REGISTRATION
+        )
+        for i in range(1, 4):
+            otp.increment_attempt_counter()
+            self.assertEqual(otp.attempt_counter, i)
+            if i < 3:
+                self.assertEqual(otp.sms_status, SmsStatus.PENDING)
+            else:
+                self.assertEqual(otp.sms_status, SmsStatus.DECLINED)

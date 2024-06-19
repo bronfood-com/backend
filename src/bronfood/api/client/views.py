@@ -31,7 +31,7 @@ class ClientRequestRegistrationView(BaseAPIView):
 
         elif Client.objects.filter(phone=request.data['phone']).exists():
             return Response(
-                data=error_data('phoneNumberIsAlreadyUsed'),
+                data=error_data('PhoneNumberIsAlreadyUsed'),
                 status=status.HTTP_409_CONFLICT
             )
 
@@ -276,23 +276,27 @@ class ClientRequestProfileUpdateView(BaseAPIView):
     serializer_class = TempDataSerializer
 
     def post(self, request):
-        data = request.data
-        data['user'] = self.current_client.id
+        request.data['user'] = self.current_client.id
         temp_data_serializer = self.serializer_class(
-            data=data
+            data=request.data
         )
+        # проверка зарезервирован ли телефон
+        similar_client = Client.objects.filter(phone=request.data['phone']).first()
+        similar_temp_data = UserAccountTempData.objects.filter(phone=request.data['phone']).first()
+        if (similar_client and similar_client.id != self.current_client.id or
+           similar_temp_data and similar_temp_data.user_id != self.current_client.id):
+            return Response(
+                data=error_data('PhoneNumberIsAlreadyUsed'),
+                status=status.HTTP_409_CONFLICT
+            )
+
         if not temp_data_serializer.is_valid():
             return Response(
                 data=error_data('ValidationError'),
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         # Создание временных данных
         temp_data_serializer.save()
-
-        # response_data = {
-        #     'temp_data_code': temp_data_serializer.instance.temp_data_code
-        # }
 
         return Response(success_data(None),
                         status=status.HTTP_200_OK)

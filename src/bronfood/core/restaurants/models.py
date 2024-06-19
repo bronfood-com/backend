@@ -214,15 +214,15 @@ class Restaurant(models.Model):
         return self.name
 
 
-class Favorite(models.Model):
-    '''Избранные блюда.'''
+class Favorites(models.Model):
+    '''Избранные рестораны'''
     user = models.ForeignKey(
         Client,
         related_name='favorites',
         on_delete=models.CASCADE,
         verbose_name='Клиент'
     )
-    shop = models.ForeignKey(
+    restaurant = models.ForeignKey(
         Restaurant,
         related_name='favorites',
         on_delete=models.CASCADE,
@@ -233,14 +233,14 @@ class Favorite(models.Model):
         verbose_name = 'Избранное заведение'
         verbose_name_plural = 'Избранные заведения'
         constraints = [
-            UniqueConstraint(
-                fields=['user', 'shop'],
-                name="unique_shop"
+            models.UniqueConstraint(
+                fields=['user', 'restaurant'],
+                name="unique_restaurant"
             )
         ]
 
     def __str__(self):
-        return f"{self.user} - {self.shop}"
+        return f"{self.user} - {self.restaurant}"
 
 
 class MealInBasket(models.Model):
@@ -385,6 +385,14 @@ class Order(models.Model):
         on_delete=models.CASCADE,
         related_name='orders'
     )
+    admin_confirmed = models.BooleanField(
+        'Подтверждение админом',
+        default=False
+    )
+
+    def confirm_order(self):
+        self.admin_confirmed = True
+        self.save()
 
     class Meta:
         verbose_name = 'Заказ'
