@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import UniqueConstraint
 
 from bronfood.core.client.models import Client
+from bronfood.core.restaurants.utils import create_order
 
 
 class Coordinates(models.Model):
@@ -214,6 +215,32 @@ class Restaurant(models.Model):
         return self.name
 
 
+class UserLikedRestaurant(models.Model):
+    '''
+    Модель для отслеживания отношения между пользователем и рестораном.
+    Содержит поле `is_liked`, которое указывает, понравился ли ресторан пользователю.
+    '''
+    user = models.ForeignKey(
+        Client,
+        on_delete=models.CASCADE,
+        verbose_name='Клиент'
+    )
+    restaurant = models.ForeignKey(
+        Restaurant,
+        on_delete=models.CASCADE,
+        verbose_name='Ресторан'
+    )
+    is_liked = models.BooleanField(
+        'Понравился ли ресторан',
+        default=False
+    )
+
+    class Meta:
+        unique_together = ('user', 'restaurant')
+        verbose_name = 'Пользовательский ресторан'
+        verbose_name_plural = 'Пользовательские рестораны'
+
+
 class Favorites(models.Model):
     '''Избранные рестораны'''
     user = models.ForeignKey(
@@ -295,21 +322,14 @@ class Basket(models.Model):
 
 class OrderedMeal(models.Model):
     '''Блюда в заказе.'''
-    id = models.AutoField(
-        'Идентификатор',
-        primary_key=True
-    )
-    itemDescription = models.CharField(
-        'Описание блюда',
-        max_length=255
-    )
-    itemPrice = models.DecimalField(
-        'Цена',
-        max_digits=10,
-        decimal_places=2
+    orderedMeal = models.ForeignKey(
+        Meal,
+        on_delete=models.CASCADE,
+        default=None,
+        verbose_name='Заказанное блюдо'
     )
     quantity = models.PositiveIntegerField(
-        'Количество'
+        'Количество блюд'
     )
 
     class Meta:
@@ -317,53 +337,54 @@ class OrderedMeal(models.Model):
         verbose_name_plural = 'Блюда в заказе'
 
     def __str__(self):
-        return self.itemDescription
+        return self.orderedMeal.name
 
 
 class Order(models.Model):
     '''Заказ'''
-    CONFIRMATION_STATUS_CHOICES = [
-        ('waiting', 'Ожидание'),
-        ('confirmed', 'Подтверждено'),
-        ('notConfirmed', 'Не подтверждено'),
-    ]
-    REVIEW_STATUS_CHOICES = [
-        ('waiting', 'Ожидание'),
-        ('reviewed', 'Рассмотрено'),
-        ('skipped', 'Пропущено'),
-    ]
     CANCELLATION_STATUS_CHOICES = [
         ('none', 'Нет'),
         ('requested', 'Запрошено'),
         ('confirmed', 'Подтверждено'),
     ]
-    clientId = models.CharField(
+    PAYMENT_STATUS_CHOICES = [
+        ('paid', 'Оплачено'),
+        ('notPaid', 'Не оплачено'),
+    ]
+    PREPARATION_STATUS_CHOICES = [
+        ('waiting', 'Ожидание'),
+        ('confirmed', 'Подтверждено'),
+        ('notConfirmed', 'Не подтверждено'),
+    ]
+    userId = models.CharField(
         'Идентификатор клиента',
         max_length=255
     )
-    id = models.AutoField(
+    id = models.CharField(
         'Идентификатор',
-        primary_key=True
+        primary_key=True,
+        max_length=255,
+        default=create_order
     )
     totalAmount = models.DecimalField(
         'Общая сумма заказа',
         max_digits=5,
         decimal_places=2
     )
-    confirmationStatus = models.CharField(
-        'Статус подтверждения',
+    preparationStatus = models.CharField(
+        'Статус подготовки заказа',
         max_length=13,
-        choices=CONFIRMATION_STATUS_CHOICES,
+        choices=PREPARATION_STATUS_CHOICES,
         default='waiting'
     )
     preparationTime = models.IntegerField(
         'Время приготовления заказа'
     )
-    reviewStatus = models.CharField(
-        'Статус рассмотрения',
-        max_length=8,
-        choices=REVIEW_STATUS_CHOICES,
-        default='waiting'
+    paymentStatus = models.CharField(
+        'Статус оплаты',
+        max_length=7,
+        choices=PAYMENT_STATUS_CHOICES,
+        default='notPaid'
     )
     cancellationTime = models.DateTimeField(
         'Время отмены заказа',
@@ -385,6 +406,11 @@ class Order(models.Model):
         on_delete=models.CASCADE,
         related_name='orders'
     )
+    restaurantId = models.ForeignKey(
+        Restaurant,
+        on_delete=models.CASCADE,
+        verbose_name='Ресторан'
+    )
     admin_confirmed = models.BooleanField(
         'Подтверждение админом',
         default=False
@@ -399,4 +425,4 @@ class Order(models.Model):
         verbose_name_plural = 'Заказы'
 
     def __str__(self):
-        return f"Заказ {self.id} клиента {self.clientId}"
+        return f"Заказ {self.id} клиента {self.userId}"

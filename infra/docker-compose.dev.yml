@@ -10,7 +10,7 @@ services:
       - ../.env
 
   web:
-    image: solodnikov/bronfood_backend:latest
+    image: d1g1tsdocker/bronfood_backend:latest
     restart: always
     volumes:
       - ./deploy_in_container.py:/app/infra/deploy_in_container.py
@@ -19,28 +19,6 @@ services:
     depends_on:
       - db
     command: python infra/deploy_in_container.py
-    env_file:
-      - ../.env
-
-  celery_worker:
-    image: solodnikov/bronfood_backend:latest
-    restart: always
-    command: sh -c 'cd /app/src/bronfood && celery -A bronfood worker --loglevel=info'
-    volumes:
-      - ./deploy_in_container.py:/app/infra/deploy_in_container.py
-    depends_on:
-      - db
-    env_file:
-      - ../.env
-
-  celery_beat:
-    image: solodnikov/bronfood_backend:latest
-    restart: always
-    command: sh -c 'cd /app/src/bronfood && celery -A bronfood beat --loglevel=info'
-    volumes:
-      - ./deploy_in_container.py:/app/infra/deploy_in_container.py
-    depends_on:
-      - db
     env_file:
       - ../.env
 
