@@ -36,8 +36,8 @@ class ClientRequestRegistrationView(BaseAPIView):
             )
 
         # Создание неподтвержденного клиента
-        client_serializer.save()
-        client = client_serializer.instance
+        client = client_serializer.save()
+        client.status = UserAccount.Status.UNCONFIRMED
 
         # Создание объекта UserAccountTempData
         temp_data_obj = UserAccountTempData.objects.create_temp_data(
