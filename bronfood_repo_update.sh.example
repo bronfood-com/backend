@@ -1,0 +1,12 @@
+#!/bin/bash
+if ! git remote | grep -q "upstream"; then
+    git remote add upstream https://github.com/bronfood-com/backend.git
+fi
+git fetch upstream
+for branch in `git branch -r | grep -v HEAD`;do
+    if ! git show-ref --verify --quiet refs/heads/${branch#origin/}; then
+        git branch --track ${branch#origin/} $branch
+    fi
+done
+git pull --all
+git push --all

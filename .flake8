@@ -8,4 +8,4 @@ exclude =
     src/bronfood/core/useraccount/migrations/*,
     src/bronfood/core/phone/migrations/*,
     venv/*,
-
+    .src/venv/*,

@@ -1,7 +1,8 @@
 from django.http import Http404
 from django.utils import timezone
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, serializers
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -23,7 +24,8 @@ from bronfood.core.restaurants.models import (
 from .serializers import (
     MealSerializer,
     MenuSerializer,
-    RestaurantSerializer,
+    RestaurantListSerializer,
+    RestaurantDetailSerializer,
     TagSerializer,
     OrderSerializer,
     OrderedMealSerializer,
@@ -52,8 +54,40 @@ class FeatureViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class FavoritesViewSet(viewsets.ModelViewSet):
-    queryset = Favorites.objects.all()
     serializer_class = FavoritesSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Favorites.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        restaurant = Restaurant.objects.get(id=self.request.data['restaurant'])
+        if Favorites.objects.filter(user=self.request.user,
+                                    restaurant=restaurant).exists():
+            raise serializers.ValidationError('Ресторан уже в избранном')
+        serializer.save(user=self.request.user, restaurant=restaurant)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({"status": "success",
+                         "message": "Ресторан удален из избранного"})
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": "success", "data": serializer.data})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response({"status": "success",
+                         "message": "Ресторан добавлен в избранное",
+                         "data": serializer.data},
+                        status=status.HTTP_201_CREATED,
+                        headers=headers)
 
 
 class MealInBasketViewSet(viewsets.ModelViewSet):
@@ -68,7 +102,12 @@ class BasketViewSet(viewsets.ModelViewSet):
 
 class RestaurantViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Restaurant.objects.all()
-    serializer_class = RestaurantSerializer
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return RestaurantListSerializer
+        else:
+            return RestaurantDetailSerializer
 
 
 class MenuViewSet(viewsets.ReadOnlyModelViewSet):
@@ -162,23 +201,3 @@ class RestaurantMealDetail(APIView):
         meal = self.get_object(restaurant_id, meal_id)
         serializer = MealSerializer(meal)
         return Response(serializer.data)
-
-
-class UserFavoritesView(APIView):
-    def get(self, request, user_id):
-        favorites = Favorites.objects.filter(user_id=user_id)
-        favorite_restaurants = Restaurant.objects.filter(
-            id__in=[favorite.restaurant_id for favorite in favorites]
-        )
-        serializer = RestaurantSerializer(favorite_restaurants, many=True)
-        return Response({"status": "success", "data": serializer.data})
-
-
-class DeleteUserFavoriteView(APIView):
-    def delete(self, request, user_id, restaurant_id):
-        favorite = Favorites.objects.filter(user_id=user_id, restaurant_id=restaurant_id)
-        if favorite.exists():
-            favorite.delete()
-            return Response({"status": "success"})
-        else:
-            return Response({"status": "error", "error_message": "Избранное не найдено"})
