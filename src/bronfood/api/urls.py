@@ -39,5 +39,8 @@ urlpatterns = [
     path('restaurant/<int:pk>/meal', RestaurantMeals.as_view(), name='restaurant-meals'),
     path('restaurant/<int:restaurant_id>/meal/<int:meal_id>', RestaurantMealDetail.as_view(), name='restaurant-meal-detail'),
     path('user/<int:user_id>/favorites', UserFavoritesView.as_view(), name='user-favorites'),
-    path('user/<int:user_id>/favorites/<int:restaurant_id>', DeleteUserFavoriteView.as_view(), name='delete-user-favorite')
+    path('user/<int:user_id>/favorites/<int:restaurant_id>', DeleteUserFavoriteView.as_view(), name='delete-user-favorite'),
+    path('basket/clear/', BasketViewSet.as_view({'delete': 'clear'}), name='basket-clear'),
+    path('basket/add_meal/', BasketViewSet.as_view({'post': 'add_meal'}), name='basket-add-meal'),
+    path('basket/<int:mealId>', BasketViewSet.as_view({'delete': 'remove_meal'}), name='basket-delete-meal'),
 ]

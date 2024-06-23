@@ -1,4 +1,5 @@
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -189,15 +190,75 @@ class BasketViewSet(viewsets.ModelViewSet):
     queryset = Basket.objects.all()
     serializer_class = BasketSerializer
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            self.perform_create(serializer)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+    def list(self, request, *args, **kwargs):
+        basket = self.get_queryset().first()
+        serializer = self.get_serializer(basket)
+        return Response(
+            {'status': 'success', 'data': serializer.data},
+            status=status.HTTP_200_OK
+        )
 
-    def perform_create(self, serializer):
-        serializer.save()
+    @action(detail=False, methods=['post'])
+    def add_meal(self, request):
+        data = request.data
+        meals_data = data.get('meals', [])
+        basket = self.get_queryset().first()
 
-    def perform_destroy(self, instance):
-        instance.delete()
+        for meal_data in meals_data:
+            meal_id = meal_data.get('meal')
+            count = meal_data.get('count', 1)
+            meal_in_basket, created = MealInBasket.objects.get_or_create(
+                meal_id=meal_id, defaults={'count': count}
+            )
+            if not created:
+                meal_in_basket.count = count
+                meal_in_basket.save()
+            basket.meals.add(meal_in_basket)
+
+        serializer = self.get_serializer(basket)
+        return Response(
+            {'status': 'success', 'data': serializer.data},
+            status=status.HTTP_201_CREATED
+        )
+
+    @action(detail=False, methods=['delete'])
+    def clear(self, request):
+        basket = self.get_queryset().first()
+        if not basket:
+            return Response(
+                {"status": "error", "error_message": "Корзина не найдена"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        basket.meals.all().delete()
+        basket.meals.clear()
+
+        serializer = self.get_serializer(basket)
+        return Response(
+            {'status': 'success', 'data': serializer.data},
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=['delete'], url_path='(?P<mealId>[^/.]+)')
+    def remove_meal(self, request, mealId=None):
+        basket = Basket.objects.first()
+        if not basket:
+            return Response(
+                {"status": "error", "error_message": "Корзина не найдена"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        meal_in_basket = get_object_or_404(MealInBasket, pk=mealId)
+        if meal_in_basket in basket.meals.all():
+            basket.meals.remove(meal_in_basket)
+            meal_in_basket.delete()
+            serializer = self.get_serializer(basket)
+            return Response(
+                {'status': 'success', 'data': serializer.data},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {"status": "error", "error_message": "Блюдо не найдено в корзине"},
+                status=status.HTTP_404_NOT_FOUND
+            )

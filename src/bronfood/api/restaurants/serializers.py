@@ -117,30 +117,15 @@ class MealInBasketSerializer(serializers.ModelSerializer):
 
 
 class BasketSerializer(serializers.ModelSerializer):
-    meals = MealInBasketSerializer(
-        many=True,
-        source='mealinbasket'
-    )
+    meals = MealInBasketSerializer(many=True)
 
     class Meta:
         model = Basket
         fields = ('restaurant', 'meals')
 
     def create(self, validated_data):
-        print(f'{validated_data=}')
-        meals_in_basket = validated_data.pop('mealinbasket')
+        meals_data = validated_data.pop('meals')
         basket = Basket.objects.create(**validated_data)
-        for meal in meals_in_basket:
-            MealInBasket.objects.create(basket=basket, **meal)
+        for meal_data in meals_data:
+            MealInBasket.objects.create(basket=basket, **meal_data)
         return basket
-
-    def update(self, instance, validated_data):
-        instance.restaurant = validated_data.get('restaurant', instance.restaurant)
-
-        instance.meals.all().delete()
-        meals = validated_data.get('mealinbasket', [])
-        for meal in meals:
-            MealInBasket.objects.create(basket=instance, **meal)
-
-        instance.save()
-        return instance
