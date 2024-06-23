@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'bronfood.core.restaurants',
     'bronfood.core.phone.apps.PhoneConfig',
     'bronfood.core.restaurant_owner.apps.RestaurantOwnerConfig',
+    'bronfood.core.restaurant_admin.apps.RestaurantAdminConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -74,7 +75,7 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_DB', default='postgres'),
         'USER': os.getenv('POSTGRES_USER', default='postgres'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', ''),
+        'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT', 5432)
     }
 }

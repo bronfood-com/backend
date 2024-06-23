@@ -1,5 +1,7 @@
 from django.test import TestCase, Client as TestClient
 from django.urls import reverse
+from rest_framework.test import APIClient
+
 from bronfood.core.restaurants.models import Restaurant, Favorites, Coordinates
 from bronfood.core.client.models import Client
 
@@ -35,12 +37,13 @@ class UrlTests(TestCase):
 
 class UserFavoritesViewTest(TestCase):
     def setUp(self):
-        self.client = TestClient()
-        self.user = Client.objects.create(
+        self.client = APIClient()
+        self.user = Client.objects.create_user(
             username='testuser',
             password='12345',
             phone='1234567890'
         )
+        self.client.force_authenticate(user=self.user)
         self.coordinates = Coordinates.objects.create(
             latitude=50.0000,
             longitude=30.0000
@@ -59,45 +62,39 @@ class UserFavoritesViewTest(TestCase):
         """
         Тест проверки получения избранных ресторанов пользователя
         """
-        response = self.client.get(
-            reverse('user-favorites', kwargs={'user_id': self.user.id})
-        )
+        response = self.client.get(reverse('favorite-list'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['status'], 'success')
         self.assertEqual(len(response.data['data']), 1)
-        self.assertEqual(response.data['data'][0]['id'], self.restaurant.id)
+        self.assertEqual(response.data['data'][0]['id'], self.favorite.id)
 
-
-class DeleteUserFavoriteViewTest(TestCase):
-    def setUp(self):
-        self.client = TestClient()
-        self.user = Client.objects.create(
-            username='testuser',
-            password='12345',
-            phone='1234567890'
+    def test_create_user_favorite(self):
+        """
+        Тест проверки добавления ресторана в избранное
+        """
+        new_coordinates = Coordinates.objects.create(
+            latitude=51.0000,
+            longitude=31.0000
         )
-        self.coordinates = Coordinates.objects.create(
-            latitude=50.0000,
-            longitude=30.0000
+        new_restaurant = Restaurant.objects.create(
+            name='newrestaurant',
+            rating=4,
+            coordinates=new_coordinates
         )
-        self.restaurant = Restaurant.objects.create(
-            name='testrestaurant',
-            rating=5,
-            coordinates=self.coordinates
+        response = self.client.post(
+            reverse('favorite-list'),
+            {'user': self.user.id, 'restaurant': new_restaurant.id},
+            format='json'
         )
-        self.favorite = Favorites.objects.create(
-            user=self.user,
-            restaurant=self.restaurant
-        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['data']['restaurant'], new_restaurant.id)
 
     def test_delete_user_favorite(self):
         """
         Тест проверки удаления избранного ресторана пользователя
         """
         response = self.client.delete(
-            reverse('delete-user-favorite',
-                    kwargs={'user_id': self.user.id,
-                            'restaurant_id': self.restaurant.id}))
+            reverse('favorite-detail', kwargs={'pk': self.favorite.id})
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['status'], 'success')
         self.assertFalse(
@@ -109,11 +106,8 @@ class DeleteUserFavoriteViewTest(TestCase):
         """
         Тест проверки удаления несуществующего избранного ресторана пользователя
         """
-        non_existent_restaurant_id = self.restaurant.id + 1
-        response = self.client.delete(reverse(
-            'delete-user-favorite',
-            kwargs={'user_id': self.user.id,
-                    'restaurant_id': non_existent_restaurant_id}))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['status'], 'error')
-        self.assertEqual(response.data['error_message'], 'Избранное не найдено')
+        non_existent_favorite_id = self.favorite.id + 1
+        response = self.client.delete(
+            reverse('favorite-detail', kwargs={'pk': non_existent_favorite_id})
+        )
+        self.assertEqual(response.status_code, 404)
