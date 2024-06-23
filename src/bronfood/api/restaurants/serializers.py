@@ -92,10 +92,11 @@ class RestaurantListSerializer(serializers.ModelSerializer):
 
 class RestaurantDetailSerializer(serializers.ModelSerializer):
     coordinates = CoordinatesSerializer(read_only=True)
+    meals = MealSerializer(many=True, read_only=True)
 
     class Meta:
         model = Restaurant
-        fields = '__all__'
+        fields = ['id', 'name', 'photo', 'address', 'coordinates', 'rating', 'workingTime', 'type', 'meals']
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
