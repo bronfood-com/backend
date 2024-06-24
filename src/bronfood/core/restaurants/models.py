@@ -249,8 +249,9 @@ class MealInBasket(models.Model):
         Meal,
         on_delete=models.CASCADE
     )
-    count = models.PositiveIntegerField(
-        'Количество блюд'
+    count = models.BigIntegerField(
+        'Количество блюд',
+        default=0
     )
 
     class Meta:
