@@ -2,6 +2,8 @@ import os
 
 from pathlib import Path
 
+from celery.schedules import crontab
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -149,3 +151,10 @@ AUTHENTICATION_BACKENDS = [
     'bronfood.core.auth_backends.UsernameBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+CELERY_BEAT_SCHEDULE = {
+    'check_expired_otps_every_minute': {
+        'task': 'bronfood.core.phone.tasks.check_expired_otps',
+        'schedule': crontab(),
+    },
+}
