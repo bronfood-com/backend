@@ -292,15 +292,21 @@ class ClientApiTests(APITestCase):
         """
         url = reverse('signin')
 
+        # подтверждение аккаунта перед входом в систему
+        client = Client.objects.get(phone=self.data_to_signin['phone'])
+        client.status = UserAccount.Status.CONFIRMED
+        client.save()
+
         # обращение клиента за авторизацией
         response = self.guest.post(
             url,
-            data={'phone': self.data_to_signin['phone'],
-                  'password': self.data_to_signin['password']},
+            data={
+                'phone': self.data_to_signin['phone'],
+                'password': self.data_to_signin['password']
+            },
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
         client = Client.objects.get(phone=self.data_to_signin['phone'])
         token = Token.objects.filter(user=client).first()
         expected_data = {
