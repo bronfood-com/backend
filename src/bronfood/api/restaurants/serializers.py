@@ -121,11 +121,11 @@ class BasketSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Basket
-        fields = ['restaurant', 'meals']
+        fields = ('restaurant', 'meals')
 
     def create(self, validated_data):
         meals_data = validated_data.pop('meals')
         basket = Basket.objects.create(**validated_data)
         for meal_data in meals_data:
-            MealInBasket.objects.create(**meal_data)
+            MealInBasket.objects.create(basket=basket, **meal_data)
         return basket
