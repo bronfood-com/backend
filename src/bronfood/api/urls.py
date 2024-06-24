@@ -16,8 +16,6 @@ from .restaurants.views import (
     MealInBasketViewSet,
     RestaurantMeals,
     RestaurantMealDetail,
-    UserFavoritesView,
-    DeleteUserFavoriteView
 )
 
 router = routers.DefaultRouter()
@@ -38,6 +36,4 @@ urlpatterns = [
     path('', include(router.urls)),
     path('restaurant/<int:pk>/meal', RestaurantMeals.as_view(), name='restaurant-meals'),
     path('restaurant/<int:restaurant_id>/meal/<int:meal_id>', RestaurantMealDetail.as_view(), name='restaurant-meal-detail'),
-    path('user/<int:user_id>/favorites', UserFavoritesView.as_view(), name='user-favorites'),
-    path('user/<int:user_id>/favorites/<int:restaurant_id>', DeleteUserFavoriteView.as_view(), name='delete-user-favorite')
 ]

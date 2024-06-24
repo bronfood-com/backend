@@ -214,6 +214,32 @@ class Restaurant(models.Model):
         return self.name
 
 
+class UserLikedRestaurant(models.Model):
+    '''
+    Модель для отслеживания отношения между пользователем и рестораном.
+    Содержит поле `is_liked`, которое указывает, понравился ли ресторан пользователю.
+    '''
+    user = models.ForeignKey(
+        Client,
+        on_delete=models.CASCADE,
+        verbose_name='Клиент'
+    )
+    restaurant = models.ForeignKey(
+        Restaurant,
+        on_delete=models.CASCADE,
+        verbose_name='Ресторан'
+    )
+    is_liked = models.BooleanField(
+        'Понравился ли ресторан',
+        default=False
+    )
+
+    class Meta:
+        unique_together = ('user', 'restaurant')
+        verbose_name = 'Пользовательский ресторан'
+        verbose_name_plural = 'Пользовательские рестораны'
+
+
 class Favorites(models.Model):
     '''Избранные рестораны'''
     user = models.ForeignKey(
