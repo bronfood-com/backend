@@ -23,7 +23,8 @@ from bronfood.core.restaurants.models import (
 from .serializers import (
     MealSerializer,
     MenuSerializer,
-    RestaurantSerializer,
+    RestaurantListSerializer,
+    RestaurantDetailSerializer,
     TagSerializer,
     OrderSerializer,
     OrderedMealSerializer,
@@ -68,7 +69,12 @@ class BasketViewSet(viewsets.ModelViewSet):
 
 class RestaurantViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Restaurant.objects.all()
-    serializer_class = RestaurantSerializer
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return RestaurantListSerializer
+        else:
+            return RestaurantDetailSerializer
 
 
 class MenuViewSet(viewsets.ReadOnlyModelViewSet):
@@ -170,7 +176,7 @@ class UserFavoritesView(APIView):
         favorite_restaurants = Restaurant.objects.filter(
             id__in=[favorite.restaurant_id for favorite in favorites]
         )
-        serializer = RestaurantSerializer(favorite_restaurants, many=True)
+        serializer = RestaurantDetailSerializer(favorite_restaurants, many=True)
         return Response({"status": "success", "data": serializer.data})
 
 

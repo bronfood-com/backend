@@ -11,6 +11,7 @@
 - [Витас Вакаускас](https://github.com/Qerced)
 - [Евгений Андронов](https://github.com/syberflea)
 - [Дмитрий Луконин](https://t.me/folite999)
+- [Павел Охрим](https://github.com/d1g-1t)
 
 ## Проект можно посмотреть по адресу:
 

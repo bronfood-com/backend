@@ -93,6 +93,22 @@ class OrderSerializer(serializers.ModelSerializer):
 class CoordinatesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Coordinates
+        fields = ['latitude', 'longitude']
+
+
+class RestaurantListSerializer(serializers.ModelSerializer):
+    coordinates = CoordinatesSerializer(read_only=True)
+
+    class Meta:
+        model = Restaurant
+        exclude = ['meals']
+
+
+class RestaurantDetailSerializer(serializers.ModelSerializer):
+    coordinates = CoordinatesSerializer(read_only=True)
+
+    class Meta:
+        model = Restaurant
         fields = '__all__'
 
 
