@@ -9,4 +9,3 @@ exclude =
     src/bronfood/core/phone/migrations/*,
     venv/*,
     .src/venv/*,
-

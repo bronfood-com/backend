@@ -17,9 +17,11 @@ from .restaurants.views import (
     RestaurantMeals,
     RestaurantMealDetail,
 )
+from .restaurant_admin.views import RestaurantAdminViewSet
 
 router = routers.DefaultRouter()
 router.register('restaurant', RestaurantViewSet, basename='restaurant')
+router.register('restaurant_admin', RestaurantAdminViewSet)
 router.register('menus', MenuViewSet, basename='menu')
 router.register('tags', TagViewSet, basename='tag')
 router.register('meals', MealViewSet, basename='meal')
