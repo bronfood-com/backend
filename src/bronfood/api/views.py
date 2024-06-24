@@ -43,9 +43,14 @@ class CustomTokenCreateView(APIView):
             # нахожу пользователя
             user = UserAccount.objects.get(phone=request.data['phone'])
             # проверяю передан ли пароль пользователя
-            if not check_password(request.data['password'],
-                                  user.password):
+            if not check_password(request.data['password'], user.password):
                 raise Exception
+            # проверяю статус пользователя
+            if user.status == UserAccount.Status.UNCONFIRMED:
+                return Response(
+                    data=error_data('AccountNotConfirmed'),
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         except Exception:
             return Response(
                 data=error_data('invalidCredentials'),
