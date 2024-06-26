@@ -66,9 +66,28 @@ class BasketViewSet(viewsets.ModelViewSet):
     serializer_class = BasketSerializer
 
 
-class RestaurantViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Restaurant.objects.all()
-    serializer_class = RestaurantSerializer
+class RestaurantViewSet(viewsets.ViewSet):
+    def list(self, request):
+        queryset = Restaurant.objects.all()
+        serializer = RestaurantSerializer(queryset, many=True)
+        return Response({
+            'status': 'success',
+            'data': serializer.data
+        })
+
+    def retrieve(self, request, pk=None):
+        try:
+            restaurant = Restaurant.objects.get(pk=pk)
+            serializer = RestaurantSerializer(restaurant)
+            return Response({
+                'status': 'success',
+                'data': serializer.data
+            })
+        except Restaurant.DoesNotExist:
+            return Response({
+                'status': 'error',
+                'error_message': 'Ошибка сервера'
+            }, status=404)
 
 
 class MenuViewSet(viewsets.ReadOnlyModelViewSet):

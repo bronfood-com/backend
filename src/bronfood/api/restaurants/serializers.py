@@ -41,12 +41,6 @@ class MenuSerializer(serializers.ModelSerializer):
             return last_meal.pic
 
 
-class RestaurantSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Restaurant
-        fields = '__all__'
-
-
 class OrderedMealSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderedMeal
@@ -85,7 +79,19 @@ class OrderSerializer(serializers.ModelSerializer):
 class CoordinatesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Coordinates
-        fields = '__all__'
+        fields = ['latitude', 'longitude']
+
+
+class RestaurantSerializer(serializers.ModelSerializer):
+    coordinates = CoordinatesSerializer(read_only=True)
+    type = serializers.ChoiceField(choices=Restaurant.RESTAURANT_TYPES)
+
+    class Meta:
+        model = Restaurant
+        fields = [
+            'id', 'name', 'photo', 'address', 'isLiked',
+            'coordinates', 'rating', 'workingTime', 'type'
+        ]
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
