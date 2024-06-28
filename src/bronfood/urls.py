@@ -13,6 +13,7 @@ urlpatterns = [
     path('healthcheck/', healthcheck),  # noqa
     path('api/', include('bronfood.api.urls')),
     path('client/', include('bronfood.api.client.urls', namespace='client')),
+    path('review/', include('bronfood.api.review.urls', namespace='review')),
     path('signin/', CustomTokenCreateView.as_view(), name="signin"),
 ]
 
