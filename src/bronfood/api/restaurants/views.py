@@ -118,7 +118,10 @@ class BasketViewSet(viewsets.ModelViewSet):
         if restaurant_id:
             restaurant = Restaurant.objects.filter(id=restaurant_id).first()
             if not restaurant:
-                return Response({'error': 'Ресторан не найден'}, status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {'error': 'Ресторан не найден'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
             basket, created = Basket.objects.get_or_create(restaurant=restaurant)
         else:
             basket, created = Basket.objects.get_or_create()
@@ -135,7 +138,10 @@ class BasketViewSet(viewsets.ModelViewSet):
             basket.meals.add(meal_in_basket)
 
         serializer = BasketSerializer(basket)
-        return Response({'status': 'success', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response(
+            {'status': 'success', 'data': serializer.data},
+            status=status.HTTP_201_CREATED
+        )
 
     @action(detail=False, methods=['delete'])
     def clear(self, request):
@@ -175,7 +181,10 @@ class BasketViewSet(viewsets.ModelViewSet):
             )
         else:
             return Response(
-                {"status": "error", "error_message": "Блюдо не найдено в корзине"},
+                {
+                    "status": "error",
+                    "error_message": "Блюдо не найдено в корзине"
+                },
                 status=status.HTTP_404_NOT_FOUND
             )
 
@@ -196,7 +205,9 @@ class RestaurantViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         try:
             restaurant = Restaurant.objects.get(pk=pk)
-            serializer = RestaurantSerializer(restaurant, context={'request': request})
+            serializer = RestaurantSerializer(
+                restaurant, context={'request': request}
+            )
             return Response({
                 'status': 'success',
                 'data': serializer.data
@@ -238,7 +249,11 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -247,7 +262,11 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=True
+        )
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
@@ -267,10 +286,24 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response({'status': 'Заказ подтвержден'})
         elif order.preparation_end_time and now > order.preparation_end_time:
             elapsed_time = now - order.preparation_end_time
-            return Response({'status': f'Время подготовки истекло {elapsed_time.seconds} секунд назад'})
+            return Response(
+                {
+                    'status': (
+                        f'Время подготовки истекло '
+                        f'{elapsed_time.seconds} секунд назад'
+                    )
+                }
+            )
         else:
             remaining_time = order.preparation_end_time - now
-            return Response({'status': f'Осталось {remaining_time.seconds} секунд до окончания времени подготовки'})
+            return Response(
+                {
+                    'status': (
+                        f'Осталось {remaining_time.seconds} секунд '
+                        'до окончания времени подготовки'
+                    )
+                }
+            )
 
 
 class RestaurantMeals(APIView):
