@@ -55,7 +55,7 @@ class FeatureViewSet(viewsets.ReadOnlyModelViewSet):
 
 class FavoritesViewSet(viewsets.ModelViewSet):
     serializer_class = FavoritesSerializer
-    permission_classes = [IsAuthenticated, IsAuthenticatedClient]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Favorites.objects.filter(user=self.request.user)
@@ -93,13 +93,13 @@ class FavoritesViewSet(viewsets.ModelViewSet):
 class MealInBasketViewSet(viewsets.ModelViewSet):
     queryset = MealInBasket.objects.all()
     serializer_class = MealInBasketSerializer
-    permission_classes = [IsAuthenticated, IsAuthenticatedClient]
+    permission_classes = [IsAuthenticated]
 
 
 class BasketViewSet(viewsets.ModelViewSet):
     queryset = Basket.objects.all()
     serializer_class = BasketSerializer
-    permission_classes = [IsAuthenticated, IsAuthenticatedClient]
+    permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
         basket = self.get_queryset().first()
@@ -190,7 +190,7 @@ class BasketViewSet(viewsets.ModelViewSet):
 
 
 class RestaurantViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated, IsAuthenticatedClient]
+    permission_classes = [IsAuthenticated]
 
     def list(self, request):
         queryset = Restaurant.objects.all()
@@ -242,7 +242,7 @@ class OrderedMealViewSet(viewsets.ReadOnlyModelViewSet):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated, IsAuthenticatedClient]
+    permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

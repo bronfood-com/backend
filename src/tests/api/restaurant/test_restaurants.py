@@ -7,13 +7,21 @@ from bronfood.core.client.models import Client
 
 
 class UrlTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = Client.objects.create_user(
+            username='testuser',
+            password='12345',
+            phone='1234567890'
+        )
+        self.client.force_authenticate(user=self.user)
+
     def test_get_restaurants(self):
         """
         Тест проверки получения статуса 200 при get запросе
         на адрес '/restaurant/'
         """
-        guest_client = TestClient()
-        response = guest_client.get("/api/restaurant/")
+        response = self.client.get("/api/restaurant/")
         self.assertEqual(response.status_code, 200)
 
     def test_get_menu(self):
@@ -21,8 +29,7 @@ class UrlTests(TestCase):
         Тест проверки получения статуса 200 при get запросе
         на адрес '/menus/'
         """
-        guest_client = TestClient()
-        response = guest_client.get("/api/menus/")
+        response = self.client.get("/api/menus/")
         self.assertEqual(response.status_code, 200)
 
     def test_get_meals(self):
@@ -30,8 +37,7 @@ class UrlTests(TestCase):
         Тест проверки получения статуса 200 при get запросе
         на адрес '/meals/'
         """
-        guest_client = TestClient()
-        response = guest_client.get("/api/meals/")
+        response = self.client.get("/api/meals/")
         self.assertEqual(response.status_code, 200)
 
 
