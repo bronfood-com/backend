@@ -1,5 +1,5 @@
 from rest_framework import permissions
-from core.useraccount.models import UserAccount
+from bronfood.core.useraccount.models import UserAccount
 
 
 class IsAuthenticatedConfirmedMixin(permissions.BasePermission):
