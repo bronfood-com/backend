@@ -56,7 +56,7 @@ def create_restaurants(count=COUNT_MOCK_DATA, meal_count=COUNT_MOCK_DATA):
                 latitude=11.111111,
                 longitude=22.222222
             ),
-            rating=random.randint(50, 100),
+            rating=random.randint(1, 5),
             workingTime=f"{random_string(BEGIN_TIMES)} - {random_string(END_TIMES)}",
             type=random.choice(
                 [choice[0] for choice in Restaurant.RESTAURANT_TYPES]

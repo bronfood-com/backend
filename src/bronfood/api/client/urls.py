@@ -5,7 +5,7 @@ from .views import (ClientChangePasswordCompleteView,
                     ClientChangePasswordConfirmationView,
                     ClientChangePasswordRequestView, ClientProfileView,
                     ClientRegistrationView, ClientRequestProfileUpdateView,
-                    ClientRequestRegistrationView)
+                    ClientRequestRegistrationView, LogoutAPIView)
 
 app_name = 'client'
 
@@ -31,7 +31,6 @@ urlpatterns = [
     path('profile/', ClientProfileView.as_view(), name='profile'),
 ]
 
-# Token
 urlpatterns += [
-    path('signout/', TokenDestroyView.as_view(), name="signout"),
+    path('signout/', LogoutAPIView.as_view(), name="signout"),
 ]

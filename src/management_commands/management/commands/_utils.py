@@ -3,6 +3,7 @@ import os
 import random
 import shutil
 
+from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
 from bronfood.core.restaurants.models import Meal
@@ -31,7 +32,7 @@ def get_random_image(folder_path, target_folder):
     """Получаем путь для папки из которой нужно выбрать случайное изображение
     и путь до папки куда нужно его копировать.
     Если папки в которую нужно копировать не существует, создаём её.
-    Возвращаем путь скопированного изображения.
+    Возвращаем URL скопированного изображения.
     """
     images = os.listdir(folder_path)
     random_image = random.choice(images)
@@ -40,7 +41,9 @@ def get_random_image(folder_path, target_folder):
         os.makedirs(target_folder)
     except FileExistsError:
         pass
-    return shutil.copy(random_image_path, target_folder)
+    copied_image_path = shutil.copy(random_image_path, target_folder)
+    image_url = os.path.join(settings.MEDIA_URL, 'pics', os.path.basename(copied_image_path))
+    return image_url
 
 
 def create_meals(count=COUNT_MOCK_DATA):

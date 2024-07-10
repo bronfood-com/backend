@@ -83,6 +83,7 @@ class CoordinatesSerializer(serializers.ModelSerializer):
 
 
 class RestaurantSerializer(serializers.ModelSerializer):
+    photo = serializers.SerializerMethodField()
     coordinates = CoordinatesSerializer(read_only=True)
     type = serializers.ChoiceField(choices=Restaurant.RESTAURANT_TYPES)
 
@@ -92,6 +93,12 @@ class RestaurantSerializer(serializers.ModelSerializer):
             'id', 'name', 'photo', 'address', 'isLiked',
             'coordinates', 'rating', 'workingTime', 'type'
         ]
+
+    def get_photo(self, obj):
+        request = self.context.get('request')
+        if obj.photo:
+            return request.build_absolute_uri(obj.photo)
+        return None
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
@@ -117,11 +124,11 @@ class BasketSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Basket
-        fields = ['restaurant', 'meals']
+        fields = ('restaurant', 'meals')
 
     def create(self, validated_data):
         meals_data = validated_data.pop('meals')
         basket = Basket.objects.create(**validated_data)
         for meal_data in meals_data:
-            MealInBasket.objects.create(**meal_data)
+            MealInBasket.objects.create(basket=basket, **meal_data)
         return basket
