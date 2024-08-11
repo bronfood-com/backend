@@ -1,50 +1,30 @@
 from rest_framework import serializers
-
 from bronfood.core.restaurants.models import (
-    Meal, Menu, Restaurant, Tag, Order, OrderedMeal,
-    Coordinates, Choice, Feature, Favorites, MealInBasket, Basket
+    Meal,
+    Menu,
+    Restaurant,
+    Tag,
+    Order,
+    OrderedMeal,
+    Coordinates,
+    Choice,
+    Feature,
+    Favorites,
+    MealInBasket,
+    Basket,
 )
 
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = '__all__'
-
-
-class FeatureSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Feature
-        fields = '__all__'
-
-
-class MealSerializer(serializers.ModelSerializer):
-    features = FeatureSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Meal
-        fields = '__all__'
-
-
-class MenuSerializer(serializers.ModelSerializer):
-    meals = MealSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Menu
-        fields = '__all__'
-
-    @staticmethod
-    def get_menu_pic(obj):
-        last_meal = obj.meals.last()
-
-        if last_meal:
-            return last_meal.pic
+        fields = "__all__"
 
 
 class OrderedMealSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderedMeal
-        fields = '__all__'
+        fields = "__all__"
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -52,16 +32,19 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = '__all__'
+        fields = "__all__"
 
     def create(self, validated_data):
-        ordered_meal_data = validated_data.pop('orderedMeal')
+        ordered_meal_data = validated_data.pop("orderedMeal")
         ordered_meal = OrderedMeal.objects.create(**ordered_meal_data)
-        order = Order.objects.create(orderedMeal=ordered_meal, **validated_data)
+        order = Order.objects.create(
+            orderedMeal=ordered_meal,
+            **validated_data
+        )
         return order
 
     def update(self, instance, validated_data):
-        ordered_meal_data = validated_data.pop('orderedMeal', {})
+        ordered_meal_data = validated_data.pop("orderedMeal", {})
         ordered_meal = instance.orderedMeal
 
         for attr, value in validated_data.items():
@@ -79,68 +62,110 @@ class OrderSerializer(serializers.ModelSerializer):
 class CoordinatesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Coordinates
-        fields = ['latitude', 'longitude']
+        fields = ["latitude", "longitude"]
 
 
-class RestaurantListSerializer(serializers.ModelSerializer):
+class RestaurantSerializer(serializers.ModelSerializer):
+    photo = serializers.SerializerMethodField()
     coordinates = CoordinatesSerializer(read_only=True)
+    type = serializers.ChoiceField(choices=Restaurant.RESTAURANT_TYPES)
 
     class Meta:
         model = Restaurant
-        exclude = ['meals']
+        fields = [
+            "id",
+            "name",
+            "photo",
+            "address",
+            "isLiked",
+            "coordinates",
+            "rating",
+            "workingTime",
+            "type",
+        ]
 
-
-class RestaurantDetailSerializer(serializers.ModelSerializer):
-    coordinates = CoordinatesSerializer(read_only=True)
-
-    class Meta:
-        model = Restaurant
-        fields = '__all__'
+    def get_photo(self, obj):
+        request = self.context.get("request")
+        if request and obj.photo:
+            return request.build_absolute_uri(obj.photo)
+        return None
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
+    price = serializers.DecimalField(
+        max_digits=10, decimal_places=2, coerce_to_string=False
+    )
+
     class Meta:
         model = Choice
-        fields = '__all__'
+        fields = ["id", "name", "price", "default", "chosen"]
+
+
+class FeatureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Feature
+        fields = "__all__"
+
+
+class MealSerializer(serializers.ModelSerializer):
+    features = FeatureSerializer(many=True)
+    price = serializers.DecimalField(
+        max_digits=10, decimal_places=2, coerce_to_string=False
+    )
+
+    class Meta:
+        model = Meal
+        fields = "__all__"
+
+
+class MealInBasketSerializer(serializers.ModelSerializer):
+    meal = MealSerializer(read_only=True)
+
+    class Meta:
+        model = MealInBasket
+        fields = ["meal", "count"]
 
 
 class FavoritesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorites
-        fields = '__all__'
+        fields = "__all__"
 
 
-class MealInBasketSerializer(serializers.ModelSerializer):
+class MenuSerializer(serializers.ModelSerializer):
+    meals = MealSerializer(many=True)
+
     class Meta:
-        model = MealInBasket
-        fields = '__all__'
+        model = Menu
+        fields = ["meals"]
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["data"] = representation.pop("meals")
+        return representation
 
 
 class BasketSerializer(serializers.ModelSerializer):
-    meals = MealInBasketSerializer(
-        many=True,
-        source='mealinbasket'
-    )
+    restaurant = RestaurantSerializer()
+    meals = serializers.SerializerMethodField()
 
     class Meta:
         model = Basket
-        fields = ('restaurant', 'meals')
+        fields = ["id", "user", "restaurant", "meals"]
 
-    def create(self, validated_data):
-        print(f'{validated_data=}')
-        meals_in_basket = validated_data.pop('mealinbasket')
-        basket = Basket.objects.create(**validated_data)
-        for meal in meals_in_basket:
-            MealInBasket.objects.create(basket=basket, **meal)
-        return basket
+    def get_meals(self, obj):
+        return [
+            {
+                "count": meal_in_basket.count,
+                "meal": MealSerializer(meal_in_basket.meal).data,
+            }
+            for meal_in_basket in obj.meals.all()
+        ]
 
-    def update(self, instance, validated_data):
-        instance.restaurant = validated_data.get('restaurant', instance.restaurant)
 
-        instance.meals.all().delete()
-        meals = validated_data.get('mealinbasket', [])
-        for meal in meals:
-            MealInBasket.objects.create(basket=instance, **meal)
+class RestaurantMenuSerializer(serializers.ModelSerializer):
+    meals = MealSerializer(many=True)
 
-        instance.save()
-        return instance
+    class Meta:
+        model = Restaurant
+        fields = ["meals"]

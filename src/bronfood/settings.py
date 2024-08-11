@@ -2,6 +2,8 @@ import os
 
 from pathlib import Path
 
+from celery.schedules import crontab
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -23,6 +25,7 @@ INSTALLED_APPS = [
     'bronfood.core.restaurants',
     'bronfood.core.phone.apps.PhoneConfig',
     'bronfood.core.restaurant_owner.apps.RestaurantOwnerConfig',
+    'bronfood.core.restaurant_admin.apps.RestaurantAdminConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -74,7 +77,7 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_DB', default='postgres'),
         'USER': os.getenv('POSTGRES_USER', default='postgres'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', ''),
+        'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT', 5432)
     }
 }
@@ -142,10 +145,18 @@ CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1',
                         'http://bronfood.sytes.net',
                         'https://bronfood.sytes.net',
                         'http://www.bronfood.sytes.net',
-                        'https://www.bronfood.sytes.net']
+                        'https://www.bronfood.sytes.net',
+                        'https://bron-dev.bounceme.net',]
 
 AUTHENTICATION_BACKENDS = [
     'bronfood.core.auth_backends.PhoneBackend',
     'bronfood.core.auth_backends.UsernameBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+CELERY_BEAT_SCHEDULE = {
+    'check_expired_otps_every_minute': {
+        'task': 'bronfood.core.phone.tasks.check_expired_otps',
+        'schedule': crontab(),
+    },
+}

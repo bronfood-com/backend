@@ -1,7 +1,10 @@
+from django.conf import settings
+import os
 from django.db import models
 from django.db.models import UniqueConstraint
 
 from bronfood.core.client.models import Client
+from bronfood.core.restaurants.utils import create_order
 
 
 class Coordinates(models.Model):
@@ -71,6 +74,27 @@ class Choice(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class FeatureChoice(models.Model):
+    '''Вариант выбора для дополнения.'''
+    id = models.AutoField(
+        'Идентификатор',
+        primary_key=True
+    )
+    name = models.CharField(
+        'Название варианта',
+        max_length=255
+    )
+    price = models.DecimalField(
+        'Цена',
+        max_digits=10,
+        decimal_places=2
+    )
+    default = models.BooleanField(
+        'По умолчанию',
+        default=False
+    )
 
 
 class Feature(models.Model):
@@ -146,13 +170,13 @@ class Meal(models.Model):
 
 class Menu(models.Model):
     '''Модель меню.'''
+    restaurant = models.OneToOneField(
+        'Restaurant',
+        on_delete=models.CASCADE
+    )
     meals = models.ManyToManyField(
         Meal,
         verbose_name='Блюда'
-    )
-    category = models.CharField(
-        'Категория меню',
-        max_length=255
     )
 
     class Meta:
@@ -182,6 +206,14 @@ class Restaurant(models.Model):
         max_length=255,
         verbose_name='Адрес'
     )
+    isLiked = models.BooleanField(
+        'Понравился ли ресторан',
+        default=False
+    )
+    meals = models.ManyToManyField(
+        Meal,
+        verbose_name='Блюда'
+    )
     coordinates = models.OneToOneField(
         Coordinates,
         on_delete=models.CASCADE,
@@ -196,10 +228,6 @@ class Restaurant(models.Model):
         'Время работы',
         max_length=255
     )
-    meals = models.ManyToManyField(
-        Meal,
-        verbose_name='Блюда'
-    )
     type = models.CharField(
         'Тип ресторана',
         max_length=8,
@@ -212,6 +240,32 @@ class Restaurant(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class UserLikedRestaurant(models.Model):
+    '''
+    Модель для отслеживания отношения между пользователем и рестораном.
+    Содержит поле `is_liked`, которое указывает, понравился ли ресторан пользователю.
+    '''
+    user = models.ForeignKey(
+        Client,
+        on_delete=models.CASCADE,
+        verbose_name='Клиент'
+    )
+    restaurant = models.ForeignKey(
+        Restaurant,
+        on_delete=models.CASCADE,
+        verbose_name='Ресторан'
+    )
+    is_liked = models.BooleanField(
+        'Понравился ли ресторан',
+        default=False
+    )
+
+    class Meta:
+        unique_together = ('user', 'restaurant')
+        verbose_name = 'Пользовательский ресторан'
+        verbose_name_plural = 'Пользовательские рестораны'
 
 
 class Favorites(models.Model):
@@ -243,8 +297,31 @@ class Favorites(models.Model):
         return f"{self.user} - {self.restaurant}"
 
 
+class MealInBasket(models.Model):
+    '''Блюдо в корзине.'''
+    meal = models.ForeignKey(
+        Meal,
+        on_delete=models.CASCADE
+    )
+    count = models.BigIntegerField(
+        'Количество блюд',
+        default=0
+    )
+
+    class Meta:
+        verbose_name = 'Блюдо в корзине'
+        verbose_name_plural = 'Блюда в корзине'
+
+    def __str__(self):
+        return f"{self.meal} - {self.count}"
+
+
 class Basket(models.Model):
     '''Корзина.'''
+    user = models.ForeignKey(
+        Client,
+        on_delete=models.CASCADE
+    )
     restaurant = models.ForeignKey(
         Restaurant,
         on_delete=models.SET_NULL,
@@ -258,15 +335,6 @@ class Basket(models.Model):
         related_name='baskets',
         verbose_name='Блюда в корзине'
     )
-
-    def add_meal(self, meal_in_basket):
-        self.meals.add(meal_in_basket)
-
-    def remove_meal(self, meal_in_basket):
-        self.meals.remove(meal_in_basket)
-
-    def clear(self):
-        self.meals.clear()
 
     class Meta:
         verbose_name = 'Корзина'
@@ -304,21 +372,14 @@ class MealInBasket(models.Model):
 
 class OrderedMeal(models.Model):
     '''Блюда в заказе.'''
-    id = models.AutoField(
-        'Идентификатор',
-        primary_key=True
-    )
-    itemDescription = models.CharField(
-        'Описание блюда',
-        max_length=255
-    )
-    itemPrice = models.DecimalField(
-        'Цена',
-        max_digits=10,
-        decimal_places=2
+    orderedMeal = models.ForeignKey(
+        Meal,
+        on_delete=models.CASCADE,
+        default=None,
+        verbose_name='Заказанное блюдо'
     )
     quantity = models.PositiveIntegerField(
-        'Количество'
+        'Количество блюд'
     )
 
     class Meta:
@@ -326,53 +387,54 @@ class OrderedMeal(models.Model):
         verbose_name_plural = 'Блюда в заказе'
 
     def __str__(self):
-        return self.itemDescription
+        return self.orderedMeal.name
 
 
 class Order(models.Model):
     '''Заказ'''
-    CONFIRMATION_STATUS_CHOICES = [
-        ('waiting', 'Ожидание'),
-        ('confirmed', 'Подтверждено'),
-        ('notConfirmed', 'Не подтверждено'),
-    ]
-    REVIEW_STATUS_CHOICES = [
-        ('waiting', 'Ожидание'),
-        ('reviewed', 'Рассмотрено'),
-        ('skipped', 'Пропущено'),
-    ]
     CANCELLATION_STATUS_CHOICES = [
         ('none', 'Нет'),
         ('requested', 'Запрошено'),
         ('confirmed', 'Подтверждено'),
     ]
-    clientId = models.CharField(
+    PAYMENT_STATUS_CHOICES = [
+        ('paid', 'Оплачено'),
+        ('notPaid', 'Не оплачено'),
+    ]
+    PREPARATION_STATUS_CHOICES = [
+        ('waiting', 'Ожидание'),
+        ('confirmed', 'Подтверждено'),
+        ('notConfirmed', 'Не подтверждено'),
+    ]
+    userId = models.CharField(
         'Идентификатор клиента',
         max_length=255
     )
-    id = models.AutoField(
+    id = models.CharField(
         'Идентификатор',
-        primary_key=True
+        primary_key=True,
+        max_length=255,
+        default=create_order
     )
     totalAmount = models.DecimalField(
         'Общая сумма заказа',
         max_digits=5,
         decimal_places=2
     )
-    confirmationStatus = models.CharField(
-        'Статус подтверждения',
+    preparationStatus = models.CharField(
+        'Статус подготовки заказа',
         max_length=13,
-        choices=CONFIRMATION_STATUS_CHOICES,
+        choices=PREPARATION_STATUS_CHOICES,
         default='waiting'
     )
     preparationTime = models.IntegerField(
         'Время приготовления заказа'
     )
-    reviewStatus = models.CharField(
-        'Статус рассмотрения',
-        max_length=8,
-        choices=REVIEW_STATUS_CHOICES,
-        default='waiting'
+    paymentStatus = models.CharField(
+        'Статус оплаты',
+        max_length=7,
+        choices=PAYMENT_STATUS_CHOICES,
+        default='notPaid'
     )
     cancellationTime = models.DateTimeField(
         'Время отмены заказа',
@@ -394,6 +456,11 @@ class Order(models.Model):
         on_delete=models.CASCADE,
         related_name='orders'
     )
+    restaurantId = models.ForeignKey(
+        Restaurant,
+        on_delete=models.CASCADE,
+        verbose_name='Ресторан'
+    )
     admin_confirmed = models.BooleanField(
         'Подтверждение админом',
         default=False
@@ -408,4 +475,4 @@ class Order(models.Model):
         verbose_name_plural = 'Заказы'
 
     def __str__(self):
-        return f"Заказ {self.id} клиента {self.clientId}"
+        return f"Заказ {self.id} клиента {self.userId}"

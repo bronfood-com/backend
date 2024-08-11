@@ -1,7 +1,9 @@
 from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from bronfood.api.client.serializers import (
     ClientRequestRegistrationSerializer,
@@ -31,13 +33,13 @@ class ClientRequestRegistrationView(BaseAPIView):
 
         elif Client.objects.filter(phone=request.data['phone']).exists():
             return Response(
-                data=error_data('PhoneNumberIsAlreadyUsed'),
+                data=error_data('phoneNumberIsAlreadyUsed'),
                 status=status.HTTP_409_CONFLICT
             )
 
         # Создание неподтвержденного клиента
-        client_serializer.save()
-        client = client_serializer.instance
+        client = client_serializer.save()
+        client.status = UserAccount.Status.UNCONFIRMED
 
         # Создание объекта UserAccountTempData
         temp_data_obj = UserAccountTempData.objects.create_temp_data(
@@ -286,7 +288,7 @@ class ClientRequestProfileUpdateView(BaseAPIView):
         if (similar_client and similar_client.id != self.current_client.id or
            similar_temp_data and similar_temp_data.user_id != self.current_client.id):
             return Response(
-                data=error_data('PhoneNumberIsAlreadyUsed'),
+                data=error_data('phoneNumberIsAlreadyUsed'),
                 status=status.HTTP_409_CONFLICT
             )
 
@@ -300,3 +302,39 @@ class ClientRequestProfileUpdateView(BaseAPIView):
 
         return Response(success_data(None),
                         status=status.HTTP_200_OK)
+
+
+class LogoutAPIView(APIView):
+    """
+    Вьюсет для выхода пользователя из системы.
+
+    Этот вьюсет обрабатывает POST запросы для выхода пользователя из системы.
+    При получении запроса, вьюсет извлекает токен пользователя из запроса,
+    используя механизм аутентификации Django Rest Framework, и удаляет этот
+    токен, тем самым аннулируя возможность дальнейшего использования токена
+    для аутентификации.
+    """
+    authentication_classes = [TokenAuthentication]
+
+    def post(self, request):
+        # Извлекаем токен из запроса
+        token = request.auth
+
+        if token is None:
+            return Response(
+                {"detail": "Токен не найден."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        try:
+            # Удаляем токен, завершая сессию пользователя
+            token.delete()
+            return Response(
+                {"detail": "Успешный выход из системы."},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"detail": f"Ошибка: {str(e)}."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
