@@ -132,15 +132,13 @@ def empty_basket(request):
 
 
 @api_view(["GET"])
-def get_basket(request):
-    user = request.user
-    try:
+def get_basket_ex(request):
+    user = request.user.id
+    if user:
         basket = Basket.objects.get(user=user)
-        return Response({"data": serialize_basket(basket)}, status=status.HTTP_200_OK)
-    except Basket.DoesNotExist:
-        return Response(
-            {"data": {"restaurant": {}, "meals": []}}, status=status.HTTP_200_OK
-        )
+        serializer = BasketSerializer(basket)
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["POST"])
@@ -152,11 +150,12 @@ def add_meal_to_basket(request):
     try:
         restaurant = Restaurant.objects.get(id=restaurant_id)
         meal = Meal.objects.get(id=meal_id)
+        feature_meal_requested = meal.features.get()
+        print(f"{feature_meal_requested=}")
     except (Restaurant.DoesNotExist, Meal.DoesNotExist):
         return Response(
             {"error": "Restaurant or Meal not found"}, status=status.HTTP_404_NOT_FOUND
         )
-
     basket, created = Basket.objects.get_or_create(
         user=user, defaults={"restaurant": restaurant}
     )
@@ -168,9 +167,16 @@ def add_meal_to_basket(request):
     meal_in_basket, created = MealInBasket.objects.get_or_create(
         meal=meal, defaults={"count": 0}
     )
-    meal_in_basket.count += 1
-    meal_in_basket.save()
+    print(f"{meal_in_basket=}")
 
+    feature_meal_basket = meal_in_basket.meal.features.get()
+    print(f"{feature_meal_basket=}")
+    if feature_meal_basket == feature_meal_requested:
+        meal_in_basket.count += 1
+    else:
+        meal_in_basket.count = 1
+
+    meal_in_basket.save()
     basket.meals.add(meal_in_basket)
     basket.save()
 
