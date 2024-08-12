@@ -50,7 +50,7 @@ jobs:
 
       - name: Start PostgreSQL with docker-compose
         run: |
-          docker-compose -f infra/docker-compose.only_db.yml up -d
+          docker compose -f infra/docker-compose.only_db.yml up -d
 
       - name: Set migrations
         run: |
