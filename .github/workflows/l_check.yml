@@ -43,7 +43,7 @@ jobs:
           echo "DB_PORT=5432" >> .env
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
  
       - name: Start PostgreSQL with docker-compose
         run: |

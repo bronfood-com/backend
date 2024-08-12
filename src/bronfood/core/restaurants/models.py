@@ -245,7 +245,8 @@ class Restaurant(models.Model):
 class UserLikedRestaurant(models.Model):
     '''
     Модель для отслеживания отношения между пользователем и рестораном.
-    Содержит поле `is_liked`, которое указывает, понравился ли ресторан пользователю.
+    Содержит поле `is_liked`, которое указывает, понравился ли ресторан
+    пользователю.
     '''
     user = models.ForeignKey(
         Client,
