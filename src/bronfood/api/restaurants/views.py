@@ -191,21 +191,25 @@ def delete_meal_from_basket(request):
     meal_id = request.data.get("meal_id")
 
     try:
-        meal_in_basket = MealInBasket.objects.get(meal_id=meal_id, baskets__user=user)
+        meal_in_basket = MealInBasket.objects.get(
+            meal_id=meal_id,
+            baskets__user=user
+        )
         if meal_in_basket.count > 1:
             meal_in_basket.count -= 1
             meal_in_basket.save()
-            message = "Количество блюда уменьшено"
+            # message = "Количество блюда уменьшено"
         else:
             meal_in_basket.delete()
-            message = "Блюдо удалено из корзины"
+            # message = "Блюдо удалено из корзины"
 
         basket = Basket.objects.get(user=user)
         serializer = BasketSerializer(basket, context={"request": request})
         return Response({"data": serializer.data}, status=status.HTTP_200_OK)
     except MealInBasket.DoesNotExist:
         return Response(
-            {"error": "Блюдо не найдено в корзине"}, status=status.HTTP_404_NOT_FOUND
+            {"error": "Блюдо не найдено в корзине"},
+            status=status.HTTP_404_NOT_FOUND
         )
     except Basket.DoesNotExist:
         return Response(
@@ -251,19 +255,6 @@ class RestaurantViewSet(viewsets.ViewSet):
         return Response({"meals": serializer.data})
 
 
-def restaurant_menu(request, restaurant_id):
-    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
-    menu = restaurant.menu_set.all().values("meals")
-
-    # Преобразуем данные меню
-    menu_data = []
-    for item in menu:
-        meals = item["meals"]
-        for meal in meals:
-            meal.pop("id", None)
-        menu_data.append({"meals": meals, "restaurant": restaurant_id})
-
-    return JsonResponse(menu_data, safe=False)
 
 
 class MenuViewSet(viewsets.ReadOnlyModelViewSet):
@@ -376,9 +367,24 @@ class RestaurantMenuView(generics.ListAPIView):
         restaurant_id = self.kwargs["restaurant_id"]
         return Menu.objects.filter(restaurant_id=restaurant_id)
 
-
+# !!! Какую из двух функций надо оставить?
 @api_view(["GET"])
 def restaurant_menu(request, restaurant_id):
     restaurant = get_object_or_404(Restaurant, id=restaurant_id)
     serializer = RestaurantMenuSerializer(restaurant)
     return Response(serializer.data)
+
+ 
+# def restaurant_menu(request, restaurant_id):
+#     restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+#     menu = restaurant.menu_set.all().values("meals")
+
+#     # Преобразуем данные меню
+#     menu_data = []
+#     for item in menu:
+#         meals = item["meals"]
+#         for meal in meals:
+#             meal.pop("id", None)
+#         menu_data.append({"meals": meals, "restaurant": restaurant_id})
+
+#     return JsonResponse(menu_data, safe=False)

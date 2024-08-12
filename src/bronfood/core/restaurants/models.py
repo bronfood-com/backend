@@ -344,32 +344,6 @@ class Basket(models.Model):
         return f"Корзина {self.id} ресторана {self.restaurant}"
 
 
-class MealInBasket(models.Model):
-    '''Блюдо в корзине.'''
-    basket = models.ForeignKey(
-        Basket,
-        on_delete=models.CASCADE,
-        related_name='mealinbasket',
-        verbose_name='Корзина',
-        default=0
-    )
-    meal = models.ForeignKey(
-        Meal,
-        on_delete=models.CASCADE
-    )
-    count = models.PositiveIntegerField(
-        'Количество блюд',
-        default=1
-    )
-
-    class Meta:
-        verbose_name = 'Блюдо в корзине'
-        verbose_name_plural = 'Блюда в корзине'
-
-    def __str__(self):
-        return f"{self.meal} - {self.count}"
-
-
 class OrderedMeal(models.Model):
     '''Блюда в заказе.'''
     orderedMeal = models.ForeignKey(
