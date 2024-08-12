@@ -1,4 +1,4 @@
-from django.http import Http404, JsonResponse
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status, viewsets, serializers, generics
@@ -104,7 +104,8 @@ class MealInBasketViewSet(viewsets.ModelViewSet):
 
 def serialize_basket(basket):
     restaurant_data = (
-        RestaurantSerializer(basket.restaurant).data if basket.restaurant else {}
+        RestaurantSerializer(basket.restaurant).data
+        if basket.restaurant else {}
     )
     meals_data = [
         {
@@ -124,7 +125,10 @@ def empty_basket(request):
         basket.meals.clear()
         basket.restaurant = None
         basket.save()
-        return Response({"data": serialize_basket(basket)}, status=status.HTTP_200_OK)
+        return Response(
+            {"data": serialize_basket(basket)},
+            status=status.HTTP_200_OK
+        )
     except Basket.DoesNotExist:
         return Response(
             {"error": "Корзина не найдена"}, status=status.HTTP_404_NOT_FOUND
@@ -154,7 +158,8 @@ def add_meal_to_basket(request):
         print(f"{feature_meal_requested=}")
     except (Restaurant.DoesNotExist, Meal.DoesNotExist):
         return Response(
-            {"error": "Restaurant or Meal not found"}, status=status.HTTP_404_NOT_FOUND
+            {"error": "Restaurant or Meal not found"},
+            status=status.HTTP_404_NOT_FOUND
         )
     basket, created = Basket.objects.get_or_create(
         user=user, defaults={"restaurant": restaurant}
@@ -228,11 +233,15 @@ class RestaurantViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         try:
             restaurant = Restaurant.objects.get(pk=pk)
-            serializer = RestaurantSerializer(restaurant, context={"request": request})
+            serializer = RestaurantSerializer(
+                restaurant,
+                context={"request": request}
+            )
             return Response({"status": "success", "data": serializer.data})
         except Restaurant.DoesNotExist:
             return Response(
-                {"status": "error", "error_message": "Ошибка сервера"}, status=404
+                {"status": "error", "error_message": "Ошибка сервера"},
+                status=404
             )
 
     @action(detail=True, methods=["get"], url_path="menu")
@@ -253,8 +262,6 @@ class RestaurantViewSet(viewsets.ViewSet):
                 del menu["restaurant"]
 
         return Response({"meals": serializer.data})
-
-
 
 
 class MenuViewSet(viewsets.ReadOnlyModelViewSet):
@@ -297,7 +304,11 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=True
+        )
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
@@ -367,6 +378,7 @@ class RestaurantMenuView(generics.ListAPIView):
         restaurant_id = self.kwargs["restaurant_id"]
         return Menu.objects.filter(restaurant_id=restaurant_id)
 
+
 # !!! Какую из двух функций надо оставить?
 @api_view(["GET"])
 def restaurant_menu(request, restaurant_id):
@@ -374,7 +386,7 @@ def restaurant_menu(request, restaurant_id):
     serializer = RestaurantMenuSerializer(restaurant)
     return Response(serializer.data)
 
- 
+
 # def restaurant_menu(request, restaurant_id):
 #     restaurant = get_object_or_404(Restaurant, id=restaurant_id)
 #     menu = restaurant.menu_set.all().values("meals")
